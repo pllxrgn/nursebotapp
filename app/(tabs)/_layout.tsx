@@ -4,7 +4,7 @@ import React from 'react';
 import { Image } from 'react-native';
 import { MedicationProvider } from '../../context/MedicationContext';
 
-const ChatIcon = require('../../assets/images/remove.photos-removed-background (2).png');
+const ChatIcon = require('../../assets/images/NBICON2.png');
 const PillIcon = require('../../assets/images/pill.png');
 
 export default function TabLayout() {
@@ -17,8 +17,11 @@ export default function TabLayout() {
             borderTopColor: '#64748b',
             borderTopWidth: 1,
           },
-          tabBarActiveTintColor: '#1a202c',
-          tabBarInactiveTintColor: '#334155',
+          tabBarActiveTintColor: '#000000',
+          tabBarInactiveTintColor: '#9CA3AF',
+          tabBarLabelStyle: {
+            color: '#000000',
+          },
           headerShown: false,
         }}
       >

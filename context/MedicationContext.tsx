@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useState } from 'react';
 import type { Medication } from '../types/medication'; // Assuming Medication type is defined here
 
 interface MedicationContextType {
   medications: Medication[];
   addMedication: (medication: Medication) => void;
   deleteMedication: (id: string) => void;
+  refreshMedications: () => Promise<void>;
   // Add other actions like updateMedication, markAsTaken/Missed if needed globally
 }
 
@@ -21,14 +22,20 @@ export const MedicationProvider: React.FC<{ children: ReactNode }> = ({ children
     setMedications((prevMeds) => prevMeds.filter((med) => med.id !== id));
   };
 
-  // You might add updateMedication, markAsTaken, markAsMissed functions here
-  // const updateMedication = (updatedMed: Medication) => { ... }
-  // const markAsTaken = (id: string) => { ... }
-  // const markAsMissed = (id: string) => { ... }
-
+  const refreshMedications = async () => {
+    // In a real app, this would fetch from an API
+    // For now, we'll just simulate a delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return Promise.resolve();
+  };
 
   return (
-    <MedicationContext.Provider value={{ medications, addMedication, deleteMedication }}>
+    <MedicationContext.Provider value={{ 
+      medications, 
+      addMedication, 
+      deleteMedication,
+      refreshMedications 
+    }}>
       {children}
     </MedicationContext.Provider>
   );

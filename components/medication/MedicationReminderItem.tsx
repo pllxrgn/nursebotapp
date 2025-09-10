@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { COLORS } from '../constants/colors';
-import type { Medication } from '../types/medication';
+import { COLORS } from '../../constants/colors';
+import type { Medication } from '../../types/medication';
 
 interface MedicationReminderItemProps {
   medication: Medication;
@@ -64,16 +64,24 @@ const MedicationReminderItem: React.FC<MedicationReminderItemProps> = ({
         )}
       </View>
 
-      <Text style={styles.dosage}>{medication.dosage}</Text>
+      <Text style={styles.dosage}>
+        {medication.dosage.amount} {medication.dosage.unit}
+        {medication.dosage.form && ` (${medication.dosage.form})`}
+      </Text>
 
       <View style={styles.detailsRow}>
         <Ionicons name="time-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-        <Text style={styles.detailText}>{medication.frequency}</Text>
+        <Text style={styles.detailText}>
+          {medication.frequency.type}
+          {medication.frequency.interval && ` every ${medication.frequency.interval} days`}
+        </Text>
       </View>
 
       <View style={styles.detailsRow}>
         <Ionicons name="alarm-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-        <Text style={styles.detailText}>{medication.times.join(', ')}</Text>
+        <Text style={styles.detailText}>
+          {medication.frequency.schedule.times.join(', ')}
+        </Text>
       </View>
 
       <View style={styles.detailsRow}>

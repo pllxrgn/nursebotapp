@@ -4,8 +4,8 @@ import { Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View }
 
 import PillIcon from '../../assets/images/pill.png';
 
-import AddMedicationForm from '../../components/AddMedicationForm';
-import MedicationItem from '../../components/MedicationItem';
+import AddMedicationModal from '../../components/forms/medication/AddMedicationModal';
+import MedicationItem from '../../components/medication/MedicationItem';
 import { useMedicationContext } from '../../context/MedicationContext';
 import type { Medication } from '../../types/medication';
 
@@ -92,13 +92,11 @@ const MedicationReminderScreen: React.FC = () => {
       </View>
 
 
-      {showAddForm && (
-        <AddMedicationForm
-          visible={showAddForm}
-          onAddMedication={handleAddMedication}
-          onCancel={handleCancelAdd}
-        />
-      )}
+      <AddMedicationModal
+        visible={showAddForm}
+        onSubmit={handleAddMedication}
+        onCancel={handleCancelAdd}
+      />
     </View>
   );
 };

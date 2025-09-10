@@ -1,10 +1,10 @@
-import Constants from 'expo-constants';
 import { useState } from 'react';
-import { FlatList, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Button } from '../../components/ui/Button';
+import { commonStyles } from '../../components/ui/theme';
 import { COLORS } from '../../constants/colors';
 
 const Chat = () => {
-  const statusBarHeight = Constants.statusBarHeight;
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
     { id: '1', sender: 'bot', text: 'Hello! How can I help you today?' },
@@ -23,15 +23,8 @@ const Chat = () => {
 
   return (
     <View style={styles.container}>
-      <View
-        style={{
-          paddingTop: Platform.OS === 'android' ? 16 : statusBarHeight + 8,
-          backgroundColor: '#fff',
-          borderBottomWidth: 1,
-          borderBottomColor: COLORS.border,
-        }}
-      >
-        <Text style={styles.header}>Health Chat</Text>
+      <View style={commonStyles.screenHeader}>
+        <Text style={commonStyles.screenTitle}>Health Chat</Text>
       </View>
       <View style={styles.contentArea}>
         {sidebarVisible && (
@@ -82,13 +75,21 @@ const Chat = () => {
               placeholder="Type your message..."
               placeholderTextColor={COLORS.secondary}
             />
-            <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-              <Text style={styles.sendButtonText}>Send</Text>
-            </TouchableOpacity>
+            <Button
+              title="Send"
+              onPress={handleSend}
+              variant="primary"
+              size="small"
+              style={{ marginLeft: 8 }}
+            />
             {!sidebarVisible && (
-              <TouchableOpacity style={styles.showSidebarButton} onPress={() => setSidebarVisible(true)}>
-                <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: 16 }}>Show History</Text>
-              </TouchableOpacity>
+              <Button
+                title="Show History"
+                onPress={() => setSidebarVisible(true)}
+                variant="outline"
+                size="small"
+                style={{ marginLeft: 8 }}
+              />
             )}
           </View>
         </View>
@@ -100,32 +101,19 @@ const Chat = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    backgroundColor: COLORS.primary3,
   },
   contentArea: {
     flex: 1,
     flexDirection: 'row',
     paddingHorizontal: 16,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primary3,
   },
   sidebar: {
     width: 160,
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 12,
     marginTop: 16,
     marginRight: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...commonStyles.card,
   },
   sidebarTitle: {
     fontWeight: 'bold',
@@ -140,15 +128,9 @@ const styles = StyleSheet.create({
   },
   chatArea: {
     flex: 1.3,
-    padding: 10,
     justifyContent: 'flex-end',
-    backgroundColor: '#fff',
-    borderRadius: 12,
     marginTop: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...commonStyles.card,
   },
   messageBubble: {
     padding: 10,
@@ -166,7 +148,7 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: 15,
-    color: '#fff', // Make chat text white
+    color: COLORS.primary2,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -177,11 +159,11 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.chatbot,
     borderRadius: 8,
     padding: 10,
     fontSize: 15,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primary2,
     color: COLORS.text,
   },
   sendButton: {
@@ -192,7 +174,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   sendButtonText: {
-    color: '#fff',
+    color: COLORS.primary2,
     fontWeight: 'bold',
     fontSize: 15,
   },
@@ -201,7 +183,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.primary3,
   },
   hideSidebarButton: {
     marginLeft: 8,
@@ -214,7 +196,7 @@ const styles = StyleSheet.create({
     height: 28,
   },
   hideSidebarButtonText: {
-    color: '#fff',
+    color: COLORS.primary2,
     fontWeight: 'bold',
     fontSize: 18,
     textAlign: 'center',

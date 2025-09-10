@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { COLORS } from '../constants/colors';
-import type { Medication } from '../types/medication';
+import { COLORS } from '../../constants/colors';
+import type { Medication } from '../../types/medication';
+import { Button } from '../ui';
 
 interface MedicationItemProps {
   medication: Medication;
@@ -66,16 +67,24 @@ const MedicationItem: React.FC<MedicationItemProps> = ({
         )}
       </View>
 
-      <Text style={styles.dosage}>{medication.dosage}</Text>
+      <Text style={styles.dosage}>
+        {medication.dosage.amount} {medication.dosage.unit}
+        {medication.dosage.form && ` (${medication.dosage.form})`}
+      </Text>
 
       <View style={styles.detailsRow}>
         <Ionicons name="time-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-        <Text style={styles.detailText}>{medication.frequency}</Text>
+        <Text style={styles.detailText}>
+          {medication.frequency.type}
+          {medication.frequency.interval && ` every ${medication.frequency.interval} days`}
+        </Text>
       </View>
 
       <View style={styles.detailsRow}>
         <Ionicons name="alarm-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-        <Text style={styles.detailText}>{medication.times.join(', ')}</Text>
+        <Text style={styles.detailText}>
+          {medication.frequency.schedule.times.join(', ')}
+        </Text>
       </View>
 
       <View style={styles.detailsRow}>
@@ -91,12 +100,18 @@ const MedicationItem: React.FC<MedicationItemProps> = ({
       )}
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.missedButton} onPress={handleMissedPress}>
-          <Text style={styles.missedButtonText}>Missed</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.takenButton} onPress={handleTakenPress}>
-          <Text style={styles.takenButtonText}>Taken</Text>
-        </TouchableOpacity>
+        <Button
+          title="Missed"
+          variant="outline"
+          onPress={handleMissedPress}
+          style={styles.actionButton}
+        />
+        <Button
+          title="Taken"
+          variant="primary"
+          onPress={handleTakenPress}
+          style={styles.actionButton}
+        />
       </View>
     </View>
   );
@@ -109,13 +124,17 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary2,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1a202c', // Fixed border color as requested
+    borderColor: '#1a202c',
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 3,
+  },
+  actionButton: {
+    flex: 1,
+    marginHorizontal: 4,
   },
   header: {
     flexDirection: 'row',
@@ -190,31 +209,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 16,
     justifyContent: 'space-between',
-  },
-  takenButton: {
-    flex: 1,
-    backgroundColor: COLORS.green[300],
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  takenButtonText: {
-    color: COLORS.primary,
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  missedButton: {
-    flex: 1,
-    backgroundColor: COLORS.chatbot,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  missedButtonText: {
-    color: COLORS.primary,
-    fontWeight: '600',
-    fontSize: 16,
   },
 });

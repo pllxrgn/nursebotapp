@@ -18,8 +18,7 @@ export const styles = StyleSheet.create({
     top: '5%',
     bottom: '5%',
     backgroundColor: COLORS.primary2,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: COLORS.chatbot,
     shadowColor: '#000',
@@ -27,9 +26,22 @@ export const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
     zIndex: 2,
+    overflow: 'hidden', // Ensure content doesn't overflow
+  },
+  contentContainer: {
+    flex: 1,
+    paddingVertical: 24,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    zIndex: 3,
+    padding: 8,
   },
   scrollViewContent: {
-    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 100, // Add extra padding at the bottom to account for the navigation bar
   },
   title: {
     fontSize: 20,
@@ -135,5 +147,12 @@ export const styles = StyleSheet.create({
   frequencyDropdownOptionText: {
     fontSize: 16,
     color: COLORS.text,
+  },
+  required: {
+    color: COLORS.error,
+  },
+  inputError: {
+    borderColor: COLORS.error,
+    borderWidth: 1,
   },
 });

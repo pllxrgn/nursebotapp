@@ -2,12 +2,31 @@
 
 # dependencies
 node_modules/
+.pnp
+.pnp.js
 
 # Expo
 .expo/
 dist/
 web-build/
+*.jks
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+.expo-shared/
 expo-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build
+build/
+out/
+.next/
 
 # Native
 .kotlin/

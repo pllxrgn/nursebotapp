@@ -3,12 +3,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../constants/colors';
+import { FORM_STEPS, INPUT_VALIDATION, TIME_FORMAT } from '../constants/formConstants';
 import { FREQUENCY_OPTIONS, MEDICATION_COLORS } from '../constants/medicationConstants';
-import type { Medication } from '../types/medication';
-import { styles } from './AddMedicationForm.styles'; // Make sure you import styles
-import ColorPicker from './ColorPicker';
-import FrequencyDropdown from './FrequencyDropdown';
-import TimeInputRow from './TimeInputRow';
+import type { DosageInfo, FrequencyType, Medication, Schedule } from '../types/medication';
+import { styles } from './AddMedicationForm.styles';
+import { FormNavigation as FormNavigationBar, FrequencyDropdown, StepIndicator, TimeInputRow } from './forms/medication/components';
+import { ColorPicker } from './ui';
 
 interface AddMedicationFormProps {
   visible: boolean;
@@ -16,10 +16,14 @@ interface AddMedicationFormProps {
   onCancel: () => void;
 }
 
+
+
 const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMedication, onCancel }) => {
+  const [currentStep, setCurrentStep] = useState(1);
   const [medicationName, setMedicationName] = useState('');
-  const [dosage, setDosage] = useState('');
-  const [frequency, setFrequency] = useState('Daily');
+  const [dosageAmount, setDosageAmount] = useState('');
+  const [dosageUnit, setDosageUnit] = useState('mg');
+  const [frequencyOption, setFrequencyOption] = useState<(typeof FREQUENCY_OPTIONS)[number]>('Daily');
   const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false);
   const [times, setTimes] = useState<string[]>(['']);
   const [startDate, setStartDate] = useState(new Date());
@@ -69,8 +73,8 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
     setShowFrequencyDropdown((prev) => !prev); // Then toggle frequency dropdown
   };
 
-  const handleFrequencySelect = (option: string) => {
-    setFrequency(option);
+  const handleFrequencySelect = (option: (typeof FREQUENCY_OPTIONS)[number]) => {
+    setFrequencyOption(option);
     setShowFrequencyDropdown(false); // Close after selection
   };
 
@@ -86,7 +90,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
     if (showTimePicker && currentTimeIndex === index) {
       if (pickerValue !== undefined) {
         const newTimes = [...times];
-        const formattedTime = pickerValue.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        const formattedTime = pickerValue.toLocaleTimeString([], TIME_FORMAT.short);
         newTimes[index] = formattedTime;
         setTimes(newTimes);
       }
@@ -138,7 +142,7 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
         } else {
           if (currentTimeIndex !== null) {
             const newTimes = [...times];
-            const formattedTime = selectedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+            const formattedTime = selectedTime.toLocaleTimeString([], TIME_FORMAT.short);
             newTimes[currentTimeIndex] = formattedTime;
             setTimes(newTimes);
           }
@@ -162,25 +166,44 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
 
   const handleAddMedication = () => {
     const validTimes = times.filter(time => time.trim() !== '');
-    if (!medicationName || !dosage || validTimes.length === 0) {
+    if (!medicationName || !dosageAmount || validTimes.length === 0) {
       alert('Please fill in medication name, dosage, and at least one time.');
       return;
     }
+
+    const dosageInfo: DosageInfo = {
+      amount: dosageAmount,
+      unit: dosageUnit,
+    };
+
+    const frequencyType: FrequencyType = frequencyOption.toLowerCase() as FrequencyType;
+    
+    const schedule: Schedule = {
+      frequency: frequencyType,
+      times: validTimes,
+    };
+
     const newMedication: Medication = {
       id: Date.now().toString(),
       name: medicationName,
-      dosage: dosage,
-      frequency: frequency,
-      times: validTimes,
+      dosage: dosageInfo,
+      frequency: {
+        type: frequencyType,
+        schedule: schedule,
+      },
+      duration: {
+        type: 'ongoing',
+      },
       startDate: startDate,
-      endDate: endDate,
       color: selectedColor,
       notes: notes,
     };
+
     onAddMedication(newMedication);
     setMedicationName('');
-    setDosage('');
-    setFrequency('Daily');
+    setDosageAmount('');
+    setDosageUnit('mg');
+    setFrequencyOption('Daily');
     setTimes(['']);
     setStartDate(new Date());
     setEndDate(undefined);
@@ -191,8 +214,9 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
 
   const handleCancel = () => {
     setMedicationName('');
-    setDosage('');
-    setFrequency('Daily');
+    setDosageAmount('');
+    setDosageUnit('mg');
+    setFrequencyOption('Daily');
     setTimes(['']);
     setStartDate(new Date());
     setEndDate(undefined);
@@ -235,6 +259,58 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
   };
 
 
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1:
+        return medicationName.trim() !== '' && dosageAmount.trim() !== '';
+      case 2:
+        const validTimes = times.filter(time => time.trim() !== '');
+        return validTimes.length > 0;
+      case 3:
+        return !!startDate && (!endDate || endDate >= startDate);
+      case 4:
+        // No required fields in step 4 (Additional Information)
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const isStepValid = validateStep(currentStep);
+
+  const handleNext = () => {
+    if (!isStepValid) {
+      switch (currentStep) {
+        case 1:
+          alert(INPUT_VALIDATION.messages.required);
+          break;
+        case 2:
+          alert(INPUT_VALIDATION.messages.atLeastOne);
+          break;
+        case 3:
+          if (!startDate) {
+            alert(INPUT_VALIDATION.messages.invalidDate);
+          } else if (endDate && endDate < startDate) {
+            alert('End date must be after start date');
+          }
+          break;
+      }
+      return;
+    }
+
+    if (currentStep < FORM_STEPS.length) {
+      setCurrentStep(currentStep + 1);
+    } else if (currentStep === FORM_STEPS.length) {
+      handleAddMedication();
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -242,101 +318,169 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
       transparent
       onRequestClose={handleCancel}
     >
-      {/* This overlay handles taps outside the modal */}
-      {/* Keep this main overlay */}
       <Pressable style={styles.overlay} onPress={handleOverlayPress} />
-
-      {/* Pressable overlay to close frequency dropdown when tapping outside it */}
-      {/* REMOVED this Pressable as it might be interfering */}
-      {/* {showFrequencyDropdown && (
-        <Pressable
-          style={styles.frequencyDropdownOverlay} // Use the imported style
-          onPress={() => setShowFrequencyDropdown(false)}
-        />
-      )} */}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 150 : 0}
       >
-        {/* Pressable overlay to close frequency dropdown when tapping outside it */}
-        {/* Temporarily removed for debugging */}
-        {/* {showFrequencyDropdown && (
-          <Pressable
-            style={styles.frequencyDropdownOverlay} // Use the imported style
-            onPress={() => setShowFrequencyDropdown(false)}
-          />
-        )} */}
-
         <View style={styles.modalContainer}>
-          <ScrollView
-            contentContainerStyle={styles.scrollViewContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled" // Keep this as "handled" for now
-          >
-            <Text style={styles.title}>Add New Medication</Text>
+          <View style={styles.contentContainer}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={handleCancel}
+            >
+              <Ionicons name="close" size={24} color={COLORS.text} />
+            </TouchableOpacity>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Medication Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., Vitamin D"
-                placeholderTextColor={COLORS.secondary}
-                value={medicationName}
-                onChangeText={setMedicationName}
-                autoFocus
-                returnKeyType="next"
-                onSubmitEditing={() => dosageRef.current?.focus()}
-                clearButtonMode="while-editing"
-              />
-            </View>
+            <StepIndicator
+              currentStep={currentStep}
+              steps={FORM_STEPS}
+            />
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Dosage</Text>
-              <TextInput
-                ref={dosageRef}
-                style={styles.input}
-                placeholder="e.g., 1000mg, 2 tablets"
-                placeholderTextColor={COLORS.secondary}
-                value={dosage}
-                onChangeText={setDosage}
-                returnKeyType="done"
-                clearButtonMode="while-editing"
-              />
-            </View>
+            <ScrollView
+              contentContainerStyle={styles.scrollViewContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Step 1: Basic Information */}
+              {currentStep === 1 && (
+                <>
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Medication Name <Text style={styles.required}>*</Text></Text>
+                    <TextInput
+                      style={[styles.input, !medicationName.trim() ? styles.inputError : null]}
+                      placeholder="e.g., Vitamin D"
+                      placeholderTextColor={COLORS.secondary}
+                      value={medicationName}
+                      onChangeText={setMedicationName}
+                      autoFocus
+                      returnKeyType="next"
+                      onSubmitEditing={() => dosageRef.current?.focus()}
+                      clearButtonMode="while-editing"
+                    />
+                  </View>
+                  
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Dosage <Text style={styles.required}>*</Text></Text>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TextInput
+                        ref={dosageRef}
+                        style={[styles.input, { flex: 2 }, !dosageAmount.trim() ? styles.inputError : null]}
+                        placeholder="e.g., 1000"
+                        placeholderTextColor={COLORS.secondary}
+                        value={dosageAmount}
+                        onChangeText={setDosageAmount}
+                        keyboardType="numeric"
+                        returnKeyType="done"
+                        clearButtonMode="while-editing"
+                      />
+                      <TextInput
+                        style={[styles.input, { flex: 1 }]}
+                        placeholder="mg"
+                        placeholderTextColor={COLORS.secondary}
+                        value={dosageUnit}
+                        onChangeText={setDosageUnit}
+                        returnKeyType="done"
+                        clearButtonMode="while-editing"
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Frequency</Text>
-              {/* Add ref to measure position */}
-              {/* Add position: 'relative' and zIndex to this View */}
-              <View ref={frequencyDropdownRef} onLayout={() => {}} style={{ position: 'relative', zIndex: 1 }}>
-                <FrequencyDropdown
-                  value={frequency}
-                  onPress={handleFrequencyPress}
-                  // Filter out the currently selected frequency from the options
-                  options={FREQUENCY_OPTIONS.filter(option => option !== frequency)}
-                  visible={showFrequencyDropdown} // Add visible prop
-                  onSelect={handleFrequencySelect} // Add onSelect prop
-                />
-              </View>
-            </View>
+              {/* Step 2: Schedule */}
+              {currentStep === 2 && (
+                <>
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Frequency <Text style={styles.required}>*</Text></Text>
+                    <View ref={frequencyDropdownRef} style={{ position: 'relative', zIndex: 1 }}>
+                      <FrequencyDropdown<(typeof FREQUENCY_OPTIONS)[number]>
+                        value={frequencyOption}
+                        onPress={handleFrequencyPress}
+                        options={FREQUENCY_OPTIONS.filter(option => option !== frequencyOption)}
+                        visible={showFrequencyDropdown}
+                        onSelect={handleFrequencySelect}
+                      />
+                    </View>
+                  </View>
 
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Times <Text style={styles.required}>*</Text></Text>
+                    {times.map((time, index) => (
+                      <TimeInputRow
+                        key={index}
+                        time={time}
+                        index={index}
+                        onTimeInputPress={handleTimeInputConfirm}
+                        onAddTimeInput={handleAddTimeInput}
+                        onRemoveTimeInput={handleRemoveTimeInput}
+                        isFirst={index === 0}
+                        showTimePicker={showTimePicker && currentTimeIndex === index}
+                      />
+                    ))}
+                  </View>
+                </>
+              )}
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Times</Text>
-              {times.map((time, index) => (
-                <TimeInputRow
-                  key={index}
-                  time={time}
-                  index={index}
-                  onTimeInputPress={handleTimeInputConfirm}
-                  onAddTimeInput={handleAddTimeInput}
-                  onRemoveTimeInput={handleRemoveTimeInput}
-                  isFirst={index === 0}
-                  showTimePicker={showTimePicker}
-                />
-              ))}
+              {/* Step 3: Duration */}
+              {currentStep === 3 && (
+                <>
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Start Date <Text style={styles.required}>*</Text></Text>
+                    <TouchableOpacity
+                      onPress={handleStartDatePress}
+                      style={[styles.inputRow, !startDate ? styles.inputError : null]}
+                    >
+                      <Text style={styles.inputText}>{startDate.toLocaleDateString()}</Text>
+                      <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>End Date (Optional)</Text>
+                    <TouchableOpacity
+                      style={styles.inputRow}
+                      onPress={handleEndDatePress}
+                    >
+                      <Text style={[styles.inputText, { color: endDate ? COLORS.text : COLORS.secondary }]}>
+                        {endDate ? endDate.toLocaleDateString() : 'mm/dd/yyyy'}
+                      </Text>
+                      <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+
+              {/* Step 4: Additional Information */}
+              {currentStep === 4 && (
+                <>
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Color</Text>
+                    <ColorPicker
+                      colors={MEDICATION_COLORS}
+                      selectedColor={selectedColor}
+                      onSelect={setSelectedColor}
+                    />
+                  </View>
+
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>Notes (Optional)</Text>
+                    <TextInput
+                      ref={notesRef}
+                      style={[styles.input, { height: 60 }]}
+                      placeholder="Any additional notes about this medication..."
+                      placeholderTextColor={COLORS.secondary}
+                      multiline
+                      value={notes}
+                      onChangeText={setNotes}
+                      clearButtonMode="while-editing"
+                    />
+                  </View>
+                </>
+              )}
+
               {showTimePicker && currentTimeIndex !== null && (
                 <DateTimePicker
                   testID="timePicker"
@@ -348,17 +492,6 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
                   accentColor={COLORS.primary}
                 />
               )}
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Start Date</Text>
-              <TouchableOpacity
-                onPress={handleStartDatePress}
-                style={styles.inputRow}
-              >
-                <Text style={styles.inputText}>{startDate.toLocaleDateString()}</Text>
-                <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
-              </TouchableOpacity>
               {showStartDatePicker && (
                 <DateTimePicker
                   testID="startDatePicker"
@@ -370,19 +503,6 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
                   accentColor={COLORS.primary}
                 />
               )}
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>End Date (Optional)</Text>
-              <TouchableOpacity
-                style={styles.inputRow}
-                onPress={handleEndDatePress}
-              >
-                <Text style={[styles.inputText, { color: endDate ? COLORS.text : COLORS.secondary }]}>
-                  {endDate ? endDate.toLocaleDateString() : 'mm/dd/yyyy'}
-                </Text>
-                <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
-              </TouchableOpacity>
               {showEndDatePicker && (
                 <DateTimePicker
                   testID="endDatePicker"
@@ -394,46 +514,18 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({ visible, onAddMed
                   accentColor={COLORS.primary}
                 />
               )}
-            </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Color</Text>
-              <ColorPicker
-                colors={MEDICATION_COLORS} // Use the imported constant
-                selectedColor={selectedColor}
-                onSelect={setSelectedColor}
-              />
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Notes (Optional)</Text>
-              <TextInput
-                ref={notesRef}
-                style={[styles.input, { height: 60 }]}
-                placeholder="Any additional notes about this medication..."
-                placeholderTextColor={COLORS.secondary}
-                multiline
-                value={notes}
-                onChangeText={setNotes}
-                clearButtonMode="while-editing"
-              />
-            </View>
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={handleCancel}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.addBtn}
-                onPress={handleAddMedication}
-              >
-                <Text style={styles.addBtnText}>Add Medication</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
+            </ScrollView>
+            
+            <FormNavigationBar 
+              currentStep={currentStep}
+              totalSteps={FORM_STEPS.length}
+              onBack={handleBack}
+              onNext={handleNext}
+              isLastStep={currentStep === FORM_STEPS.length}
+              isNextDisabled={!isStepValid}
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>

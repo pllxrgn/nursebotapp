@@ -12,4 +12,6 @@ export const COLORS = {
     300: "#CAE8BD",        // Dark Green for active elements
     400: "#B0DB9C",        // Darker Green for hover states
   },
+  border: "#E0E0E0",       // Light gray for borders
+  error: "#DC2626",        // Red for error states
 };

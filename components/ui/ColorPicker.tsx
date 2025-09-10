@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/colors';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { COLORS } from '../../constants/colors';
 
 interface ColorPickerProps {
-  colors: string[];
+  colors: readonly string[];
   selectedColor: string;
   onSelect: (color: string) => void;
 }

@@ -1,12 +1,61 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+import React from 'react';
+import { ScrollView, Text, View } from 'react-native';
+import { Button } from '../../components/ui/Button';
+import { commonStyles } from '../../components/ui/theme';
 
-const settings = () => {
+const Settings = () => {
   return (
-    <View>
-      <Text>settings</Text>
-    </View>
-  )
-}
+    <View style={commonStyles.container}>
+      <View style={commonStyles.screenHeader}>
+        <Text style={commonStyles.screenTitle}>Settings</Text>
+      </View>
+      
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+        <View style={commonStyles.card}>
+          <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Account</Text>
+          <Button
+            title="Profile Settings"
+            variant="outline"
+            onPress={() => console.log('Profile settings')}
+            style={{ marginBottom: 12 }}
+          />
+          <Button
+            title="Notification Preferences"
+            variant="outline"
+            onPress={() => console.log('Notification settings')}
+            style={{ marginBottom: 12 }}
+          />
+          <Button
+            title="Privacy Settings"
+            variant="outline"
+            onPress={() => console.log('Privacy settings')}
+          />
+        </View>
 
-export default settings
+        <View style={[commonStyles.card, { marginTop: 16 }]}>
+          <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Help & Support</Text>
+          <Button
+            title="Contact Support"
+            variant="outline"
+            onPress={() => console.log('Contact support')}
+            style={{ marginBottom: 12 }}
+          />
+          <Button
+            title="FAQs"
+            variant="outline"
+            onPress={() => console.log('FAQs')}
+          />
+        </View>
+
+        <Button
+          title="Sign Out"
+          variant="secondary"
+          onPress={() => console.log('Sign out')}
+          style={{ marginTop: 24 }}
+        />
+      </ScrollView>
+    </View>
+  );
+};
+
+export default Settings;
