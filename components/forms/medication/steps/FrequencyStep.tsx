@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { COLORS } from '../../../../constants/colors';
 import { DAYS_OF_WEEK, TIME_PRESETS } from '../../../../constants/medicationConstants';
 import type { DayOfWeek, Medication, Schedule } from '../../../../types/medication';
-import TimeInputRow from '../../../TimeInputRow';
+import { TimeInputRow } from '../components';
 
 interface FrequencyStepProps {
   onNext: (data: Partial<Medication>) => void;
@@ -116,11 +116,21 @@ const FrequencyStep: React.FC<FrequencyStepProps> = ({ onNext, onBack, data }) =
           ))}
         </View>
 
-        <TimeInputRow
-          times={schedule.times || []}
-          onAddTime={addTime}
-          onRemoveTime={removeTime}
-        />
+        {(schedule.times || []).map((time, index) => (
+          <TimeInputRow
+            key={index}
+            time={time}
+            index={index}
+            onTimeInputPress={(idx, newTime) => {
+              if (newTime) {
+                addTime(newTime);
+              }
+            }}
+            onAddTimeInput={() => addTime('')}
+            onRemoveTimeInput={(idx) => removeTime(schedule.times[idx])}
+            isFirst={index === 0}
+          />
+        ))}
         {errors.times && <Text style={styles.errorText}>{errors.times}</Text>}
       </View>
 

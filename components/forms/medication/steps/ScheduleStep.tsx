@@ -3,25 +3,25 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { COLORS } from '../../../../constants/colors';
 import { DAYS_OF_WEEK, TIME_PRESETS } from '../../../../constants/medicationConstants';
 import type { DayOfWeek, Medication, Schedule } from '../../../../types/medication';
-import { TimeInputRow } from '../components';
+import TimeInputRow from '../components/TimeInputRow';
 
 interface ScheduleStepProps {
   onNext: (data: Partial<Medication>) => void;
+  onBack: () => void;
   data: Partial<Medication>;
 }
 
-const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, data }) => {
+const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, onBack, data }) => {
   const [schedule, setSchedule] = useState<Schedule>({
     frequency: 'daily',
-    days: [],
-    times: []
+    times: data.frequency?.schedule.times || [],
+    days: data.frequency?.schedule.days || []
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
   const toggleDay = (day: DayOfWeek) => {
     const days = schedule.days || [];
     const newDays = days.includes(day)
-      ? days.filter((d: DayOfWeek) => d !== day)
+      ? days.filter(d => d !== day)
       : [...days, day];
     
     setSchedule({
@@ -29,15 +29,26 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, data }) => {
       days: newDays,
       frequency: newDays.length === 7 ? 'daily' : 'weekly'
     });
+
+    // Validate after selection
+    validateSchedule();
   };
 
-  const addTime = (time: string) => {
-    const times = schedule.times || [];
-    if (!times.includes(time)) {
+  const handleTimeChange = (index: number, newTime?: string) => {
+    if (newTime) {
+      const times = [...(schedule.times || [])];
+      if (index < times.length) {
+        times[index] = newTime;
+      } else {
+        times.push(newTime);
+      }
+      
       setSchedule({
         ...schedule,
-        times: [...times, time].sort()
+        times: times.sort()
       });
+      // Only validate to show/hide errors
+      validateSchedule();
     }
   };
 
@@ -45,11 +56,11 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, data }) => {
     const times = schedule.times || [];
     setSchedule({
       ...schedule,
-      times: times.filter((t: string) => t !== time)
+      times: times.filter(t => t !== time)
     });
   };
 
-  const validate = (): boolean => {
+  const validateSchedule = () => {
     const newErrors: { [key: string]: string } = {};
 
     if (!schedule.times || schedule.times.length === 0) {
@@ -64,8 +75,9 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, data }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validate()) {
+  // Function to handle the Continue button press
+  const handleContinue = () => {
+    if (validateSchedule()) {
       onNext({
         frequency: {
           type: schedule.frequency,
@@ -73,10 +85,6 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, data }) => {
         }
       });
     }
-  };
-
-  const handlePresetPress = (preset: (typeof TIME_PRESETS)[number]) => {
-    preset.times.forEach(addTime);
   };
 
   return (
@@ -112,26 +120,58 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, data }) => {
             <TouchableOpacity
               key={preset.label}
               style={styles.presetButton}
-              onPress={() => handlePresetPress(preset)}
+              onPress={() => {
+                setSchedule({
+                  ...schedule,
+                  times: [...preset.times].sort()
+                });
+                // Only validate to show/hide errors
+                validateSchedule();
+              }}
             >
               <Text style={styles.presetButtonText}>{preset.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {schedule.times.map((time, index) => (
+        {(schedule.times || []).map((time, index) => (
           <TimeInputRow
             key={index}
             time={time}
             index={index}
-            onTimeInputPress={(index) => addTime(`${index}:00`)}
-            onAddTimeInput={() => addTime('')}
-            onRemoveTimeInput={(index) => removeTime(schedule.times[index])}
+            onTimeInputPress={handleTimeChange}
+            onAddTimeInput={() => {
+              const times = [...(schedule.times || []), ''];
+              setSchedule({
+                ...schedule,
+                times
+              });
+            }}
+            onRemoveTimeInput={(idx) => {
+              const newTimes = schedule.times.filter((_, i) => i !== idx);
+              setSchedule({
+                ...schedule,
+                times: newTimes
+              });
+              validateSchedule();
+            }}
             isFirst={index === 0}
-            showTimePicker={false}
           />
         ))}
         {errors.times && <Text style={styles.errorText}>{errors.times}</Text>}
+
+        <TouchableOpacity
+          style={[styles.addTimeButton, (schedule.times || []).length === 0 && styles.firstTimeButton]}
+          onPress={() => {
+            const times = [...(schedule.times || []), ""];
+            setSchedule({
+              ...schedule,
+              times
+            });
+          }}
+        >
+          <Text style={styles.addTimeButtonText}>+ Add Time</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -141,6 +181,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    backgroundColor: '#F3F4F6',
   },
   section: {
     marginBottom: 24,
@@ -192,6 +233,22 @@ const styles = StyleSheet.create({
   presetButtonText: {
     color: COLORS.text,
     fontSize: 14,
+  },
+  addTimeButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary3,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  firstTimeButton: {
+    marginTop: 0,
+  },
+  addTimeButtonText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
   errorText: {
     color: COLORS.error,

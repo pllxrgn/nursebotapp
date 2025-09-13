@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import MedicationFormContainer from '../../../components/forms/medication/MedicationFormContainer';
 import { COLORS } from '../../../constants/colors';
 import type { Medication } from '../../../types/medication';
+import MedicationFormContainer from './MedicationFormContainer';
 
 interface AddMedicationModalProps {
   visible: boolean;

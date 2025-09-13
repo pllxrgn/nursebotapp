@@ -26,9 +26,10 @@ interface BasicInfoStepProps {
   data: Partial<Medication> & {
     dosage?: Partial<DosageInfo>;
   };
+  onValidationChange?: (isValid: boolean) => void;
 }
 
-const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, data }) => {
+const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, data, onValidationChange }) => {
   const [name, setName] = useState(data.name || '');
   const [dosage, setDosage] = useState<DosageInfo>({
     amount: data.dosage?.amount || '',
@@ -70,7 +71,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, data }) => {
   };
 
   const handleNext = () => {
-    if (validate()) {
+    if (checkFormValidity() && validate()) {
       onNext({
         name,
         dosage: {
@@ -81,7 +82,21 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, data }) => {
     }
   };
 
-  const isFormValid = name.trim() && dosage.amount && !isNaN(Number(dosage.amount)) && Number(dosage.amount) > 0 && dosage.unit;
+  const checkFormValidity = (): boolean => {
+    return Boolean(
+      name.trim() && 
+      dosage.amount && 
+      !isNaN(Number(dosage.amount)) && 
+      Number(dosage.amount) > 0 && 
+      dosage.unit
+    );
+  };
+
+  // Update validation state when fields change
+  useEffect(() => {
+    const isValid = checkFormValidity();
+    onValidationChange?.(isValid);
+  }, [name, dosage.amount, dosage.unit, onValidationChange]);
 
   return (
     <View style={styles.container}>
@@ -131,7 +146,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, data }) => {
               placeholderTextColor={COLORS.secondary}
               returnKeyType="next"
             />
-            <View style={{ flex: 1.2 }}>
+            <View style={{ flex: 1.5 }}>
               <Dropdown<string>
                 value={dosage.unit}
                 placeholder="Select unit"
@@ -157,7 +172,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, data }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F3F4F6',
   },
   formContent: {
     padding: 16,

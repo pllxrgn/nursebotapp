@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    Dimensions,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Dimensions,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { COLORS } from '../../constants/colors';
 
@@ -20,11 +20,20 @@ interface Option<T extends string | number> {
 interface DropdownProps<T extends string | number> {
   placeholder?: string;
   value: T;
-  options: Option<T>[];
+  options: Option<T>[] | T[];
   onChange: (value: T) => void;
   error?: boolean;
   style?: any;
+  mode?: 'modal' | 'inline';
+  customTrigger?: React.ReactNode;
+  formatOption?: (option: T) => string;
 }
+
+const isOption = <T extends string | number>(
+  option: Option<T> | T
+): option is Option<T> => {
+  return typeof option === 'object' && 'value' in option && 'label' in option;
+};
 
 const Dropdown = <T extends string | number>({
   placeholder = 'Select an option',
@@ -32,45 +41,110 @@ const Dropdown = <T extends string | number>({
   options,
   onChange,
   error,
-  style
+  style,
+  mode = 'modal',
+  customTrigger,
+  formatOption
 }: DropdownProps<T>): React.ReactElement => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState('');
 
   useEffect(() => {
-    const selected = options.find(opt => opt.value === value);
-    setSelectedLabel(selected ? selected.label : '');
-  }, [value, options]);
+    const selected = options.find(opt => 
+      isOption(opt) ? opt.value === value : opt === value
+    );
+    setSelectedLabel(
+      selected
+        ? isOption(selected)
+          ? selected.label
+          : formatOption
+            ? formatOption(selected)
+            : String(selected)
+        : ''
+    );
+  }, [value, options, formatOption]);
 
-  const handleSelect = (optionValue: T) => {
+  const handleSelect = (option: Option<T> | T) => {
+    const optionValue = isOption(option) ? option.value : option;
     onChange(optionValue);
     setIsOpen(false);
   };
 
-  return (
-    <View>
+  const renderOption = (option: Option<T> | T) => {
+    const optionValue = isOption(option) ? option.value : option;
+    const optionLabel = isOption(option) ? option.label : formatOption ? formatOption(option) : String(option);
+    const isSelected = optionValue === value;
+
+    return (
       <TouchableOpacity
+        key={String(optionValue)}
         style={[
-          styles.dropdownButton,
-          error && styles.error,
-          style
+          styles.option,
+          isSelected && styles.selectedOption
         ]}
-        onPress={() => setIsOpen(true)}
-        activeOpacity={0.7}
+        onPress={() => handleSelect(option)}
       >
         <Text style={[
-          styles.selectedText,
-          !value && styles.placeholder
+          styles.optionText,
+          isSelected && styles.selectedOptionText
         ]}>
-          {selectedLabel || placeholder}
+          {optionLabel}
         </Text>
-        <Ionicons
-          name="chevron-down"
-          size={20}
-          color={COLORS.text}
-          style={styles.icon}
-        />
+        {isSelected && (
+          <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+        )}
       </TouchableOpacity>
+    );
+  };
+
+  if (mode === 'inline') {
+    return (
+      <View>
+        {customTrigger || (
+          <TouchableOpacity
+            style={[styles.dropdownButton, error && styles.error, style]}
+            onPress={() => setIsOpen(!isOpen)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.selectedText, !value && styles.placeholder]}>
+              {selectedLabel || placeholder}
+            </Text>
+            <Ionicons
+              name={isOpen ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={COLORS.text}
+              style={styles.icon}
+            />
+          </TouchableOpacity>
+        )}
+        {isOpen && (
+          <View style={styles.inlineDropdown}>
+            {options.map(renderOption)}
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      {customTrigger || (
+        <TouchableOpacity
+          style={[styles.dropdownButton, error && styles.error, style]}
+          onPress={() => setIsOpen(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.selectedText, !value && styles.placeholder]}>
+            {selectedLabel || placeholder}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={20}
+            color={COLORS.text}
+            style={styles.icon}
+          />
+        </TouchableOpacity>
+      )}
 
       <Modal
         visible={isOpen}
@@ -91,26 +165,7 @@ const Dropdown = <T extends string | number>({
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.optionsList}>
-              {options.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.option,
-                    option.value === value && styles.selectedOption
-                  ]}
-                  onPress={() => handleSelect(option.value)}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    option.value === value && styles.selectedOptionText
-                  ]}>
-                    {option.label}
-                  </Text>
-                  {option.value === value && (
-                    <Ionicons name="checkmark" size={20} color={COLORS.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
+              {options.map(renderOption)}
             </ScrollView>
           </View>
         </TouchableOpacity>
@@ -202,6 +257,29 @@ const styles = StyleSheet.create({
   selectedOptionText: {
     color: COLORS.primary,
     fontWeight: '600',
+  },
+  inlineDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.primary3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginTop: 4,
+    zIndex: 1000,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
 });
 

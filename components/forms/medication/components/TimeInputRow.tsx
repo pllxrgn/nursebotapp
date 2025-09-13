@@ -1,16 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 
 interface TimeInputRowProps {
   time: string;
   index: number;
-  onTimeInputPress: (index: number) => void;
+  onTimeInputPress: (index: number, time?: string) => void;
   onAddTimeInput: () => void;
   onRemoveTimeInput: (index: number) => void;
   isFirst: boolean;
-  showTimePicker: boolean;
 }
 
 const TimeInputRow: React.FC<TimeInputRowProps> = ({
@@ -19,8 +18,7 @@ const TimeInputRow: React.FC<TimeInputRowProps> = ({
   onTimeInputPress,
   onAddTimeInput,
   onRemoveTimeInput,
-  isFirst,
-  showTimePicker
+  isFirst
 }) => {
 
   const formatTime = (timeString: string) => {
@@ -36,30 +34,65 @@ const TimeInputRow: React.FC<TimeInputRowProps> = ({
     }
   };
 
-  const handleTimeChange = (event: any, selectedDate?: Date) => {
-    if (event.type === 'set' && selectedDate) {
-      onTimeInputPress(index);
+  const [inputTime, setInputTime] = useState(time);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const formatTimeInput = (text: string) => {
+    // Remove any non-digit characters
+    const digitsOnly = text.replace(/\D/g, '');
+    
+    if (digitsOnly.length <= 2) {
+      return digitsOnly;
+    } else if (digitsOnly.length <= 4) {
+      return `${digitsOnly.slice(0, 2)}:${digitsOnly.slice(2)}`;
     }
+    return text;
+  };
+
+  const validateAndFormatTime = (timeStr: string) => {
+    const [hoursStr, minutesStr] = timeStr.split(':');
+    const hours = parseInt(hoursStr || '0');
+    const minutes = parseInt(minutesStr || '0');
+
+    if (!isNaN(hours) && !isNaN(minutes) && 
+        hours >= 0 && hours < 24 && 
+        minutes >= 0 && minutes < 60) {
+      const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      onTimeInputPress(index, formattedTime);
+      return formattedTime;
+    }
+    return time || '';
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    const formattedTime = validateAndFormatTime(inputTime);
+    setInputTime(formattedTime);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.timeInputContainer}>
-        <TouchableOpacity 
+        <TextInput
           style={[
-            styles.timeChip,
-            !time && styles.emptyTimeChip,
-            showTimePicker && styles.activeTimeChip
+            styles.timeInput,
+            !time && styles.emptyTimeInput,
+            isEditing && styles.activeTimeInput
           ]}
-          onPress={() => onTimeInputPress(index)}
-        >
-          <Text style={[
-            styles.timeText,
-            !time && styles.placeholderText
-          ]}>
-            {formatTime(time)}
-          </Text>
-        </TouchableOpacity>
+          value={inputTime}
+          onChangeText={(text) => {
+            const formatted = formatTimeInput(text);
+            setInputTime(formatted);
+            if (text.length >= 4) {
+              validateAndFormatTime(formatted);
+            }
+          }}
+          onFocus={() => setIsEditing(true)}
+          onBlur={handleBlur}
+          placeholder="HH:mm"
+          keyboardType="numeric"
+          maxLength={5}
+        />
 
         {!isFirst && (
           <TouchableOpacity
@@ -98,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  timeChip: {
+  timeInput: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primary3,
@@ -108,23 +141,18 @@ const styles = StyleSheet.create({
     minWidth: 120,
     borderWidth: 1,
     borderColor: 'transparent',
-  },
-  emptyTimeChip: {
-    borderColor: COLORS.chatbot,
-    borderStyle: 'dashed',
-  },
-  activeTimeChip: {
-    borderColor: COLORS.primary,
-    borderStyle: 'solid',
-  },
-  timeText: {
     fontSize: 16,
     color: COLORS.text,
     textAlign: 'center',
-    flex: 1,
   },
-  placeholderText: {
+  emptyTimeInput: {
+    borderColor: COLORS.chatbot,
+    borderStyle: 'dashed',
     color: COLORS.secondary,
+  },
+  activeTimeInput: {
+    borderColor: COLORS.primary,
+    borderStyle: 'solid',
   },
   removeButton: {
     marginLeft: 12,

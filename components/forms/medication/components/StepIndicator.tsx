@@ -20,11 +20,11 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep }) => 
             <View style={styles.stepContainer}>
               <View style={[
                 styles.stepCircle,
-                index <= currentStep && styles.activeStepCircle
+                (index === currentStep || index < currentStep) && styles.activeStepCircle
               ]}>
                 <Text style={[
                   styles.stepNumber,
-                  index <= currentStep && styles.activeStepNumber
+                  (index === currentStep || index < currentStep) && styles.activeStepNumber
                 ]}>
                   {index + 1}
                 </Text>
@@ -59,7 +59,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep }) => 
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: COLORS.primary2,
+    backgroundColor: '#F3F4F6',
   },
   stepsContainer: {
     flexDirection: 'row',

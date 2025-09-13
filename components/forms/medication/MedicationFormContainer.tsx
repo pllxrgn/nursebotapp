@@ -60,12 +60,25 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
     }
   };
 
+  // State to track if the current step is valid
+  const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
+
+  const handleStepValidation = (isValid: boolean) => {
+    setIsCurrentStepValid(isValid);
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 0:
-        return <BasicInfoStep onNext={handleStepComplete} data={formData} />;
+        return (
+          <BasicInfoStep
+            onNext={handleStepComplete}
+            data={formData}
+            onValidationChange={handleStepValidation}
+          />
+        );
       case 1:
-        return <ScheduleStep onNext={handleStepComplete} data={formData} />;
+        return <ScheduleStep onNext={handleStepComplete} data={formData} onBack={handleBack} />;
       case 2:
         return <DurationStep onNext={handleStepComplete} data={formData} />;
       case 3:
@@ -83,11 +96,12 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
       />
       {renderStep()}
       <FormNavigation
-        currentStep={currentStep}
+        currentStep={currentStep + 1}
         totalSteps={FORM_STEPS.length}
         onBack={handleBack}
         onNext={handleStepComplete}
         isLastStep={currentStep === FORM_STEPS.length - 1}
+        isNextDisabled={currentStep === 0 && !isCurrentStepValid}
       />
     </View>
   );
@@ -96,7 +110,7 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
   }
 });
 

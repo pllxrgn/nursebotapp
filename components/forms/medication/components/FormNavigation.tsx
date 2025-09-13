@@ -66,8 +66,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     backgroundColor: COLORS.primary2,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.primary3,
   },
   nextButtonDisabled: {
     backgroundColor: COLORS.secondary,
