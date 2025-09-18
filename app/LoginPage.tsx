@@ -5,14 +5,20 @@ import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 const { useState } = React;
 
-const LoginScreen: React.FC = () => {
+const LoginScreen: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = () => {
-    console.log('Login pressed', { email, password, rememberMe });
+    // Placeholder credentials
+    if (email === "test@example.com" && password === "password123") {
+      alert("Login successful!");
+      if (onLogin) onLogin();
+    } else {
+      alert("Invalid credentials. Try test@example.com / password123");
+    }
   };
 
   return (
