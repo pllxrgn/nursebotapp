@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Modal, SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import type { Medication } from '../../../types/medication';
+import { generateId } from '../../../utils/uuid';
 import MedicationFormContainer from './MedicationFormContainer';
 
 interface AddMedicationModalProps {
@@ -15,14 +17,42 @@ const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
   visible,
   onSubmit,
   onCancel
-}) => {
+}: AddMedicationModalProps) => {
   const handleSubmit = (medication: Partial<Medication>) => {
-    // Generate a random ID and add current date as startDate if not provided
+    // Detailed validation with logging
+    const missingFields = [];
+    
+    if (!medication.name) missingFields.push('name');
+    if (!medication.dosage?.amount || !medication.dosage?.unit) missingFields.push('dosage');
+    if (!medication.schedule?.type || !medication.schedule?.times?.length) missingFields.push('schedule');
+    if (!medication.duration?.type) missingFields.push('duration');
+    
+    if (missingFields.length > 0) {
+      console.error('Missing required medication fields:', missingFields);
+      console.log('Current medication data:', JSON.stringify(medication, null, 2));
+      return;
+    }
+
+    // At this point, we know these fields exist because of the validation above
     const completeData: Medication = {
-      ...medication,
-      id: Math.random().toString(36).substring(2, 15),
+      id: generateId(),
+      name: medication.name!,
+      dosage: medication.dosage!,
+      schedule: medication.schedule!,
+      duration: medication.duration!,
       startDate: medication.startDate || new Date(),
-    } as Medication;
+      color: medication.color || '#64748b', // Default color if not provided
+      notes: medication.notes || '',
+      refillReminder: medication.refillReminder || {
+        enabled: false,
+        threshold: 7,
+        unit: 'days'
+      },
+      sideEffects: medication.sideEffects || [],
+      interactions: medication.interactions || [],
+      storage: medication.storage || {},
+    };
+
     onSubmit(completeData);
   };
 
@@ -32,7 +62,7 @@ const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
       animationType="slide"
       presentationStyle="pageSheet"
     >
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={onCancel}

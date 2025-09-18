@@ -17,6 +17,8 @@ export const TIMES_OF_DAY: { [key in TimeOfDay]: string } = {
   bedtime: '10:00 PM'
 };
 
+import { MedicationForm } from '../types/medication';
+
 export const MEDICATION_FORMS = [
   'tablet',
   'capsule',
@@ -31,6 +33,23 @@ export const MEDICATION_FORMS = [
   'patch',
   'other'
 ] as const;
+
+
+// Define units for each medication form
+export const FORM_UNITS: { [key in MedicationForm]: string[] } = {
+  tablet: ['tablet(s)'],
+  capsule: ['capsule(s)'],
+  liquid: ['mL', 'mg/mL'],
+  injection: ['mL', 'mg', 'unit(s)'],
+  syrup: ['mL', 'mg/5mL'],
+  powder: ['g', 'mg'],
+  inhaler: ['puff(s)'],
+  drops: ['drop(s)'],
+  spray: ['spray(s)'],
+  cream: ['g'],
+  patch: ['patch(es)'],
+  other: ['mg', 'g', 'mcg', 'mL', 'unit(s)']
+};
 
 export const DOSAGE_UNITS = [
   'mg',

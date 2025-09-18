@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../../constants/colors';
-import type { Medication } from '../../types/medication';
+import type { DayOfWeek, Medication } from '../../types/medication';
+import { isCustomSchedule, isMonthlySchedule, isWeeklySchedule } from '../../types/typeGuards';
 import { Button } from '../ui';
+const { useState } = React;
 
 interface MedicationItemProps {
   medication: Medication;
@@ -19,11 +21,11 @@ const MedicationItem: React.FC<MedicationItemProps> = ({
   onMissed,
   onEdit,
   onDelete,
-}) => {
+}: MedicationItemProps) => {
   const [showOptions, setShowOptions] = useState(false);
 
   const handleOptionsPress = () => {
-    setShowOptions((prev) => !prev);
+    setShowOptions((prev: boolean) => !prev);
   };
 
   const handleEditPress = () => {
@@ -33,7 +35,10 @@ const MedicationItem: React.FC<MedicationItemProps> = ({
 
   const handleDeletePress = () => {
     setShowOptions(false);
-    onDelete();
+    // Only call delete if we have an id
+    if (medication.id) {
+      onDelete();
+    }
   };
 
   const handleTakenPress = () => {
@@ -72,30 +77,102 @@ const MedicationItem: React.FC<MedicationItemProps> = ({
         {medication.dosage.form && ` (${medication.dosage.form})`}
       </Text>
 
-      <View style={styles.detailsRow}>
-        <Ionicons name="time-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-        <Text style={styles.detailText}>
-          {medication.frequency.type}
-          {medication.frequency.interval && ` every ${medication.frequency.interval} days`}
-        </Text>
-      </View>
-
-      <View style={styles.detailsRow}>
-        <Ionicons name="alarm-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-        <Text style={styles.detailText}>
-          {medication.frequency.schedule.times.join(', ')}
-        </Text>
-      </View>
-
-      <View style={styles.detailsRow}>
-        <Ionicons name="calendar-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-        <Text style={styles.detailText}>Since {medication.startDate.toLocaleDateString()}</Text>
-      </View>
-
-      {medication.notes && (
+      {/* Schedule Information */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Schedule</Text>
         <View style={styles.detailsRow}>
-          <Ionicons name="document-text-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-          <Text style={styles.detailText}>{medication.notes}</Text>
+          <Ionicons name="time-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
+          <Text style={styles.detailText}>
+            {medication.schedule.type.charAt(0).toUpperCase() + medication.schedule.type.slice(1)}
+            {isCustomSchedule(medication.schedule) && 
+              ` (Every ${medication.schedule.interval} days)`}
+            {isWeeklySchedule(medication.schedule) && 
+              ` (${medication.schedule.days.map((day: DayOfWeek) => 
+                day.charAt(0).toUpperCase() + day.slice(1)
+              ).join(', ')})`}
+            {isMonthlySchedule(medication.schedule) && 
+              ` (Days: ${medication.schedule.daysOfMonth.join(', ')})`}
+          </Text>
+        </View>
+
+        <View style={styles.detailsRow}>
+          <Ionicons name="alarm-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
+          <Text style={styles.detailText}>
+            Times: {medication.schedule.times.join(', ')}
+          </Text>
+        </View>
+
+        {medication.schedule.mealRelation && medication.schedule.mealRelation.length > 0 && (
+          <View style={styles.detailsRow}>
+            <Ionicons name="restaurant-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
+            <Text style={styles.detailText}>
+              {medication.schedule.mealRelation.map((rel: NonNullable<Medication['schedule']['mealRelation']>[number]) => 
+                `${rel.timing} ${rel.meal}${rel.offsetMinutes ? ` (${rel.offsetMinutes} mins)` : ''}`
+              ).join(', ')}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Duration Information */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Duration</Text>
+        <View style={styles.detailsRow}>
+          <Ionicons name="calendar-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
+          <Text style={styles.detailText}>
+            Started: {medication.startDate ? medication.startDate.toLocaleDateString() : 'Not set'}
+            {medication.duration.type === 'endDate' && medication.duration.endDate && 
+              ` → ${medication.duration.endDate.toLocaleDateString()}`}
+            {medication.duration.type === 'numberOfDays' && medication.duration.value && 
+              ` (${medication.duration.value} days)`}
+            {medication.duration.type === 'numberOfWeeks' && medication.duration.value && 
+              ` (${medication.duration.value} weeks)`}
+            {medication.duration.type === 'ongoing' && 
+              ' (Ongoing)'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Additional Information */}
+      {(medication.notes || 
+        (medication.sideEffects && medication.sideEffects.length > 0) || 
+        (medication.interactions && medication.interactions.length > 0) || 
+        medication.storage) && (
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Additional Information</Text>
+          {medication.notes && (
+            <View style={styles.detailsRow}>
+              <Ionicons name="document-text-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
+              <Text style={styles.detailText}>{medication.notes}</Text>
+            </View>
+          )}
+          
+          {medication.sideEffects && medication.sideEffects.length > 0 && (
+            <View style={styles.detailsRow}>
+              <Ionicons name="warning-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
+              <Text style={styles.detailText}>Side Effects: {medication.sideEffects.join(', ')}</Text>
+            </View>
+          )}
+
+          {medication.interactions && medication.interactions.length > 0 && (
+            <View style={styles.detailsRow}>
+              <Ionicons name="alert-circle-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
+              <Text style={styles.detailText}>Interactions: {medication.interactions.join(', ')}</Text>
+            </View>
+          )}
+
+          {medication.storage && (
+            <View style={styles.detailsRow}>
+              <Ionicons name="thermometer-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
+              <Text style={styles.detailText}>
+                Storage: {[
+                  medication.storage.temperature,
+                  medication.storage.light,
+                  medication.storage.special
+                ].filter(Boolean).join(', ')}
+              </Text>
+            </View>
+          )}
         </View>
       )}
 
@@ -140,7 +217,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   colorCircle: {
     width: 12,
@@ -193,17 +270,33 @@ const styles = StyleSheet.create({
     color: COLORS.secondary,
     marginBottom: 12,
   },
+  sectionContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginBottom: 8,
+  },
   detailsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
+    alignItems: 'flex-start',
+    marginBottom: 8,
+    paddingRight: 8,
   },
   detailIcon: {
     marginRight: 8,
+    marginTop: 2,
   },
   detailText: {
     fontSize: 14,
     color: COLORS.text,
+    flex: 1,
+    lineHeight: 20,
   },
   buttonRow: {
     flexDirection: 'row',

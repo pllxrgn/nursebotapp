@@ -1,0 +1,20 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "datetimepicker",
+    "meds",
+    "nativewind",
+    "worklets",
+    "ionicons",
+    "expo",
+    "uuidv",
+    "nursebot"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".git/**"
+  ]
+}

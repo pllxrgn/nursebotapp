@@ -1,81 +1,62 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ColorPicker } from '../../../../components/ui';
 import { COLORS } from '../../../../constants/colors';
 import { MEDICATION_COLORS, STORAGE_CONDITIONS } from '../../../../constants/medicationConstants';
 import type { Medication } from '../../../../types/medication';
+const { useState } = React;
 
-interface AdditionalInfoStepProps {
-  onNext: (data: Partial<Medication>) => void;
-  data: Partial<Medication>;
-}
+import type { StepProps } from '../../../../types/form';
 
-const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({ onNext, data }) => {
-  const [additionalInfo, setAdditionalInfo] = useState({
-    color: data.color || MEDICATION_COLORS[0],
-    notes: data.notes || '',
-    refillReminder: data.refillReminder || {
-      enabled: true,
-      threshold: 7,
-      unit: 'days' as const
-    },
-    storage: data.storage || {},
-    sideEffects: data.sideEffects || [],
-    interactions: data.interactions || []
-  });
-
+const AdditionalInfoStep: React.FC<StepProps> = ({ 
+  control,
+  errors,
+  getValues,
+  setValue,
+  isLastStep
+}) => {
+  const values = getValues();
   const [newSideEffect, setNewSideEffect] = useState('');
   const [newInteraction, setNewInteraction] = useState('');
 
   const handleColorSelect = (color: string) => {
-    setAdditionalInfo(prev => ({ ...prev, color }));
+    setValue('color', color);
   };
 
   type StorageKey = keyof NonNullable<Medication['storage']>;
 
   const handleStorageChange = (key: StorageKey, value: string) => {
-    setAdditionalInfo(prev => ({
-      ...prev,
-      storage: {
-        ...prev.storage,
-        [key]: value
-      }
-    }));
+    setValue('storage', {
+      ...values.storage,
+      [key]: value
+    });
   };
 
   const addSideEffect = () => {
     if (newSideEffect.trim()) {
-      setAdditionalInfo(prev => ({
-        ...prev,
-        sideEffects: [...prev.sideEffects, newSideEffect.trim()]
-      }));
+      const currentSideEffects = values.sideEffects || [];
+      setValue('sideEffects', [...currentSideEffects, newSideEffect.trim()]);
       setNewSideEffect('');
     }
   };
 
   const removeSideEffect = (index: number) => {
-    setAdditionalInfo(prev => ({
-      ...prev,
-      sideEffects: prev.sideEffects.filter((_, i) => i !== index)
-    }));
+    const currentSideEffects = values.sideEffects || [];
+    setValue('sideEffects', currentSideEffects.filter((_, i) => i !== index));
   };
 
   const addInteraction = () => {
     if (newInteraction.trim()) {
-      setAdditionalInfo(prev => ({
-        ...prev,
-        interactions: [...prev.interactions, newInteraction.trim()]
-      }));
+      const currentInteractions = values.interactions || [];
+      setValue('interactions', [...currentInteractions, newInteraction.trim()]);
       setNewInteraction('');
     }
   };
 
   const removeInteraction = (index: number) => {
-    setAdditionalInfo(prev => ({
-      ...prev,
-      interactions: prev.interactions.filter((_, i) => i !== index)
-    }));
+    const currentInteractions = values.interactions || [];
+    setValue('interactions', currentInteractions.filter((_, i) => i !== index));
   };
 
   return (
@@ -84,7 +65,7 @@ const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({ onNext, data })
         <Text style={styles.sectionTitle}>Color Tag</Text>
         <ColorPicker
           colors={MEDICATION_COLORS}
-          selectedColor={additionalInfo.color}
+          selectedColor={values.color || MEDICATION_COLORS[0]}
           onSelect={handleColorSelect}
         />
       </View>
@@ -100,13 +81,13 @@ const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({ onNext, data })
                 key={temp}
                 style={[
                   styles.optionButton,
-                  additionalInfo.storage?.temperature === temp && styles.optionButtonSelected
+                  values.storage?.temperature === temp && styles.optionButtonSelected
                 ]}
                 onPress={() => handleStorageChange('temperature', temp)}
               >
                 <Text style={[
                   styles.optionText,
-                  additionalInfo.storage?.temperature === temp && styles.optionTextSelected
+                  values.storage?.temperature === temp && styles.optionTextSelected
                 ]}>
                   {temp}
                 </Text>
@@ -123,13 +104,13 @@ const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({ onNext, data })
                 key={light}
                 style={[
                   styles.optionButton,
-                  additionalInfo.storage?.light === light && styles.optionButtonSelected
+                  values.storage?.light === light && styles.optionButtonSelected
                 ]}
                 onPress={() => handleStorageChange('light', light)}
               >
                 <Text style={[
                   styles.optionText,
-                  additionalInfo.storage?.light === light && styles.optionTextSelected
+                  values.storage?.light === light && styles.optionTextSelected
                 ]}>
                   {light}
                 </Text>
@@ -142,8 +123,8 @@ const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({ onNext, data })
           <Text style={styles.label}>Special Instructions:</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            value={additionalInfo.storage?.special || ''}
-            onChangeText={(value) => handleStorageChange('special', value)}
+            value={values.storage?.special || ''}
+            onChangeText={(value: string) => handleStorageChange('special', value)}
             placeholder="Enter any special storage instructions"
             placeholderTextColor={COLORS.secondary}
             multiline
@@ -170,7 +151,7 @@ const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({ onNext, data })
             <Ionicons name="add-circle" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
-        {additionalInfo.sideEffects.map((effect, index) => (
+        {(values.sideEffects || []).map((effect: string, index: number) => (
           <View key={index} style={styles.chip}>
             <Text style={styles.chipText}>{effect}</Text>
             <TouchableOpacity onPress={() => removeSideEffect(index)}>
@@ -197,7 +178,7 @@ const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({ onNext, data })
             <Ionicons name="add-circle" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
-        {additionalInfo.interactions.map((interaction, index) => (
+        {(values.interactions || []).map((interaction: string, index: number) => (
           <View key={index} style={styles.chip}>
             <Text style={styles.chipText}>{interaction}</Text>
             <TouchableOpacity onPress={() => removeInteraction(index)}>
@@ -211,8 +192,8 @@ const AdditionalInfoStep: React.FC<AdditionalInfoStepProps> = ({ onNext, data })
         <Text style={styles.sectionTitle}>Notes</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
-          value={additionalInfo.notes}
-          onChangeText={(notes) => setAdditionalInfo(prev => ({ ...prev, notes }))}
+          value={values.notes || ''}
+          onChangeText={(notes: string) => setValue('notes', notes)}
           placeholder="Add any additional notes or instructions"
           placeholderTextColor={COLORS.secondary}
           multiline

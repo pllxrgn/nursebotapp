@@ -35,46 +35,59 @@ NurseBot is a focused React Native mobile application built with Expo that serve
 ## Frontend Development Checklist
 *Note: This checklist focuses on frontend implementation only. Backend integration tasks are marked with [FUTURE] and will be implemented later.*
 
-### Priority 1: Core UI & Navigation
-- [x] Implement consistent styling across all screens
+### Priority 1: Core UI & Navigation [COMPLETED]
+- [✓] Implement consistent styling across all screens
   - Implemented consistent color scheme
   - Added standard header styling with SafeAreaView
   - Consistent button and card styles
   - Used consistent typography
-- [x] Add loading states for all async operations
+- [✓] Add loading states for all async operations
   - Loading states in chat and medication screens
-- [x] Add error states for form validations
+- [✓] Add error states for form validations
   - Implemented error handling in forms
   - Added error messages display
-- [x] Add empty states for lists
+- [✓] Add empty states for lists
   - Added empty state for medications list
-- [x] Implement proper keyboard handling
+- [✓] Implement proper keyboard handling
   - Form inputs properly handle keyboard
-- [x] Add pull-to-refresh functionality
+- [✓] Add pull-to-refresh functionality
   - Added RefreshControl to main screens
   - Implemented refresh mechanism in MedicationContext
-- [x] Implement smooth transitions between screens
+- [✓] Implement smooth transitions between screens
   - Tab navigation transitions working
-- [x] Add gesture navigation support
+- [✓] Add gesture navigation support
   - Tab navigation gestures implemented
 
-### Priority 2: Form Handling & Validation
-- [x] Add form validation in AddMedicationForm
-  - [x] Required fields validation (implemented step-by-step validation)
-  - [x] Visual indicators for required fields (added asterisk markers)
-  - [x] Error state styling for invalid fields
-  - [x] Prevent proceeding without required data
-- [x] Implement form error messages
-  - [x] Added alert messages for missing required fields
-  - [x] Visual feedback for validation errors
-- [x] Add input organization
-  - [x] Structured form into logical steps
-  - [x] Added step validation
-  - [x] Improved component organization
-- [x] Component improvements
-  - [x] Generic FrequencyDropdown with proper TypeScript support
-  - [x] Organized form-related components in dedicated folders
-  - [x] Added visual feedback for active/error states
+### Priority 2: Form Handling & Validation [COMPLETED]
+- [✓] Add form validation in AddMedicationForm
+  - [✓] Required fields validation (implemented step-by-step validation)
+  - [✓] Visual indicators for required fields (added asterisk markers)
+  - [✓] Error state styling for invalid fields
+  - [✓] Prevent proceeding without required data
+- [✓] Implement form error messages
+  - [✓] Added alert messages for missing required fields
+  - [✓] Visual feedback for validation errors
+- [✓] Add input organization
+  - [✓] Structured form into logical steps
+  - [✓] Added step validation
+  - [✓] Improved component organization
+- [✓] Component improvements
+  - [✓] Generic FrequencyDropdown with proper TypeScript support
+  - [✓] Organized form-related components in dedicated folders
+  - [✓] Added visual feedback for active/error states
+
+### Priority 0: Baseline Stability & Type Hygiene [IN PROGRESS]
+- [✓] Improve medication type system
+  - Implemented discriminated unions for schedule types
+  - Added type guards for schedule validation
+  - Removed redundant type definitions
+  - Added proper type safety for frequency handling
+- [✓] Implement UUID for medication IDs
+  - Verified existing implementation using generateId()
+  - Confirmed no instances of Math.random for IDs
+  - Using proper UUID v4 generation
+- [ ] Create date serialization utilities
+- [ ] Verify dependency alignment
 
 ### Priority 3: Local State Management
 - [ ] Implement local storage for medication data

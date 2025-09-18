@@ -1,90 +1,82 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 import { DAYS_OF_WEEK, TIME_PRESETS } from '../../../../constants/medicationConstants';
-import type { DayOfWeek, Medication, Schedule } from '../../../../types/medication';
+import type { StepProps } from '../../../../types/form';
+import type { DayOfWeek } from '../../../../types/medication';
 import TimeInputRow from '../components/TimeInputRow';
 
-interface ScheduleStepProps {
-  onNext: (data: Partial<Medication>) => void;
-  onBack: () => void;
-  data: Partial<Medication>;
-}
+const ScheduleStep: React.FC<StepProps> = ({ 
+  control,
+  errors,
+  getValues,
+  setValue,
+  isLastStep
+}) => {
+  const schedule = getValues('schedule');
+  if (!schedule) return null;
 
-const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, onBack, data }) => {
-  const [schedule, setSchedule] = useState<Schedule>({
-    frequency: 'daily',
-    times: data.frequency?.schedule.times || [],
-    days: data.frequency?.schedule.days || []
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const toggleDay = (day: DayOfWeek) => {
-    const days = schedule.days || [];
-    const newDays = days.includes(day)
-      ? days.filter(d => d !== day)
-      : [...days, day];
-    
-    setSchedule({
-      ...schedule,
-      days: newDays,
-      frequency: newDays.length === 7 ? 'daily' : 'weekly'
-    });
+    const currentSchedule = getValues('schedule');
+    if (!currentSchedule) return;
 
-    // Validate after selection
-    validateSchedule();
+    if (currentSchedule.type === 'weekly') {
+      const days = currentSchedule.days || [];
+      const newDays = days.includes(day)
+        ? days.filter((d: DayOfWeek) => d !== day)
+        : [...days, day];
+      
+      // If all days are selected, switch to daily schedule
+      if (newDays.length === 7) {
+        setValue('schedule', {
+          ...currentSchedule,
+          type: 'daily',
+          mealRelation: currentSchedule.mealRelation || [],
+          timePreferences: currentSchedule.timePreferences || [],
+          times: currentSchedule.times || []
+        });
+      } else {
+        setValue('schedule', {
+          ...currentSchedule,
+          days: newDays
+        });
+      }
+    } else if (currentSchedule.type === 'daily') {
+      // If in daily schedule and a day is deselected, switch to weekly with all days except the deselected one
+      const allDays: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      setValue('schedule', {
+        ...currentSchedule,
+        type: 'weekly',
+        days: allDays.filter(d => d !== day),
+        mealRelation: currentSchedule.mealRelation || [],
+        timePreferences: currentSchedule.timePreferences || []
+      });
+    }
   };
 
   const handleTimeChange = (index: number, newTime?: string) => {
-    if (newTime) {
-      const times = [...(schedule.times || [])];
-      if (index < times.length) {
-        times[index] = newTime;
+    if (newTime && schedule) {
+      const currentTimes = [...(schedule.times || [])];
+      if (index < currentTimes.length) {
+        currentTimes[index] = newTime;
       } else {
-        times.push(newTime);
+        currentTimes.push(newTime);
       }
       
-      setSchedule({
+      setValue('schedule', {
         ...schedule,
-        times: times.sort()
+        times: [...currentTimes].sort()
       });
-      // Only validate to show/hide errors
-      validateSchedule();
     }
   };
 
-  const removeTime = (time: string) => {
-    const times = schedule.times || [];
-    setSchedule({
+  const removeTime = (index: number) => {
+    if (!schedule) return;
+
+    setValue('schedule', {
       ...schedule,
-      times: times.filter(t => t !== time)
+      times: schedule.times.filter((_: string, i: number) => i !== index)
     });
-  };
-
-  const validateSchedule = () => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!schedule.times || schedule.times.length === 0) {
-      newErrors.times = 'Please select at least one time';
-    }
-
-    if (schedule.frequency === 'weekly' && (!schedule.days || schedule.days.length === 0)) {
-      newErrors.days = 'Please select at least one day';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Function to handle the Continue button press
-  const handleContinue = () => {
-    if (validateSchedule()) {
-      onNext({
-        frequency: {
-          type: schedule.frequency,
-          schedule
-        }
-      });
-    }
   };
 
   return (
@@ -97,20 +89,24 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, onBack, data }) => 
               key={day}
               style={[
                 styles.dayButton,
-                schedule.days?.includes(day) && styles.dayButtonSelected
+                ((schedule.type === 'weekly' && schedule.days.includes(day)) || schedule.type === 'daily') && styles.dayButtonSelected
               ]}
               onPress={() => toggleDay(day)}
             >
               <Text style={[
                 styles.dayButtonText,
-                schedule.days?.includes(day) && styles.dayButtonTextSelected
+                ((schedule.type === 'weekly' && schedule.days.includes(day)) || schedule.type === 'daily') && styles.dayButtonTextSelected
               ]}>
                 {day.substring(0, 3)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-        {errors.days && <Text style={styles.errorText}>{errors.days}</Text>}
+        {errors.schedule && (
+          <Text style={styles.errorText}>
+            {errors.schedule.type?.message || errors.schedule.message}
+          </Text>
+        )}
       </View>
 
       <View style={styles.section}>
@@ -121,12 +117,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, onBack, data }) => 
               key={preset.label}
               style={styles.presetButton}
               onPress={() => {
-                setSchedule({
-                  ...schedule,
-                  times: [...preset.times].sort()
-                });
-                // Only validate to show/hide errors
-                validateSchedule();
+                setValue('schedule.times', [...preset.times].sort());
               }}
             >
               <Text style={styles.presetButtonText}>{preset.label}</Text>
@@ -134,7 +125,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, onBack, data }) => 
           ))}
         </View>
 
-        {(schedule.times || []).map((time, index) => (
+        {(schedule.times || []).map((time: string, index: number) => (
           <TimeInputRow
             key={index}
             time={time}
@@ -142,32 +133,24 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ onNext, onBack, data }) => 
             onTimeInputPress={handleTimeChange}
             onAddTimeInput={() => {
               const times = [...(schedule.times || []), ''];
-              setSchedule({
-                ...schedule,
-                times
-              });
+              setValue('schedule.times', times);
             }}
-            onRemoveTimeInput={(idx) => {
-              const newTimes = schedule.times.filter((_, i) => i !== idx);
-              setSchedule({
-                ...schedule,
-                times: newTimes
-              });
-              validateSchedule();
+            onRemoveTimeInput={(idx: number) => {
+              const newTimes = schedule.times.filter((_: string, i: number) => i !== idx);
+              setValue('schedule.times', newTimes);
             }}
             isFirst={index === 0}
           />
         ))}
-        {errors.times && <Text style={styles.errorText}>{errors.times}</Text>}
+        {errors.schedule?.times && (
+          <Text style={styles.errorText}>{errors.schedule.times.message}</Text>
+        )}
 
         <TouchableOpacity
           style={[styles.addTimeButton, (schedule.times || []).length === 0 && styles.firstTimeButton]}
           onPress={() => {
             const times = [...(schedule.times || []), ""];
-            setSchedule({
-              ...schedule,
-              times
-            });
+            setValue('schedule.times', times);
           }}
         >
           <Text style={styles.addTimeButtonText}>+ Add Time</Text>

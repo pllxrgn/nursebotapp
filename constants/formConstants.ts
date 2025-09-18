@@ -1,24 +1,24 @@
 
 export const FORM_STEPS = [
   {
-    id: '1',
-    title: 'Basic\nInformation',
+    id: 'basics',
+    title: 'Basic Information',
     description: 'Enter medication name, dosage, and form'
   },
   {
-    id: '2',
+    id: 'schedule',
     title: 'Schedule',
-    description: 'Set frequency and timing'
+    description: 'Set when to take the medication'
   },
   {
-    id: '3',
+    id: 'duration',
     title: 'Duration',
-    description: 'Set start and end dates'
+    description: 'Set how long to take the medication'
   },
   {
-    id: '4',
-    title: 'Additional\nInformation',
-    description: 'Add notes and color'
+    id: 'additional',
+    title: 'Additional Information',
+    description: 'Add any other important details'
   }
 ] as const;
 
@@ -51,12 +51,3 @@ export const FORM_DEFAULTS = {
   color: '#FF0000',
   frequency: 'Daily' as const
 };
-
-export const DATE_FORMAT_OPTIONS = {
-  short: { month: 'short', day: 'numeric', year: 'numeric' } as const,
-  long: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' } as const
-} as const;
-
-export const TIME_FORMAT_OPTIONS = {
-  short: { hour: '2-digit', minute: '2-digit', hour12: true } as const
-} as const;

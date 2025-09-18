@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../../constants/colors';
-import type { Medication } from '../../types/medication';
+import type { CustomSchedule, Medication } from '../../types/medication';
+const { useState } = React;
 
 interface MedicationReminderItemProps {
   medication: Medication;
@@ -18,11 +19,11 @@ const MedicationReminderItem: React.FC<MedicationReminderItemProps> = ({
   onMissed,
   onEdit,
   onDelete,
-}) => {
+}: MedicationReminderItemProps) => {
   const [showOptions, setShowOptions] = useState(false);
 
   const handleOptionsPress = () => {
-    setShowOptions((prev) => !prev);
+    setShowOptions((prev: boolean) => !prev);
   };
 
   const handleEditPress = () => {
@@ -72,15 +73,16 @@ const MedicationReminderItem: React.FC<MedicationReminderItemProps> = ({
       <View style={styles.detailsRow}>
         <Ionicons name="time-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
         <Text style={styles.detailText}>
-          {medication.frequency.type}
-          {medication.frequency.interval && ` every ${medication.frequency.interval} days`}
+          {medication.schedule.type}
+          {medication.schedule.type === 'custom' && (medication.schedule as CustomSchedule).interval && 
+            ` every ${(medication.schedule as CustomSchedule).interval} days`}
         </Text>
       </View>
 
       <View style={styles.detailsRow}>
         <Ionicons name="alarm-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
         <Text style={styles.detailText}>
-          {medication.frequency.schedule.times.join(', ')}
+          {medication.schedule.times.join(', ')}
         </Text>
       </View>
 

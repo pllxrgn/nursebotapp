@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
+const { useState } = React;
 
 interface TimeInputRowProps {
   time: string;
@@ -19,7 +20,7 @@ const TimeInputRow: React.FC<TimeInputRowProps> = ({
   onAddTimeInput,
   onRemoveTimeInput,
   isFirst
-}) => {
+}: TimeInputRowProps) => {
 
   const formatTime = (timeString: string) => {
     if (!timeString) return 'Select time';
@@ -80,7 +81,7 @@ const TimeInputRow: React.FC<TimeInputRowProps> = ({
             isEditing && styles.activeTimeInput
           ]}
           value={inputTime}
-          onChangeText={(text) => {
+          onChangeText={(text: string) => {
             const formatted = formatTimeInput(text);
             setInputTime(formatted);
             if (text.length >= 4) {

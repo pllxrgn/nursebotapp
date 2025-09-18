@@ -1,8 +1,9 @@
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Checkbox } from 'expo-checkbox';
-import React, { useState } from 'react';
+import React from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+const { useState } = React;
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');

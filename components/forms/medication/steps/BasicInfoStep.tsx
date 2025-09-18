@@ -1,169 +1,147 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { Controller } from 'react-hook-form';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
-import { MEDICATION_FORMS } from '../../../../constants/medicationConstants';
-import type { DosageInfo, Medication, MedicationForm } from '../../../../types/medication';
+import { FORM_UNITS, MEDICATION_FORMS } from '../../../../constants/medicationConstants';
+import { MedicationForm } from '../../../../types/medication.d';
 import Dropdown from '../../../ui/Dropdown';
 
-// Define units for each medication form
-const FORM_UNITS: { [key in MedicationForm]: string[] } = {
-  tablet: ['tablet(s)'],
-  capsule: ['capsule(s)'],
-  liquid: ['mL', 'mg/mL'],
-  injection: ['mL', 'mg', 'unit(s)'],
-  syrup: ['mL', 'mg/5mL'],
-  powder: ['g', 'mg'],
-  inhaler: ['puff(s)'],
-  drops: ['drop(s)'],
-  spray: ['spray(s)'],
-  cream: ['g'],
-  patch: ['patch(es)'],
-  other: ['mg', 'g', 'mcg', 'mL', 'unit(s)']
-};
+import type { StepProps } from '../../../../types/form';
 
-interface BasicInfoStepProps {
-  onNext: (data: Partial<Medication>) => void;
-  data: Partial<Medication> & {
-    dosage?: Partial<DosageInfo>;
-  };
-  onValidationChange?: (isValid: boolean) => void;
-}
-
-const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, data, onValidationChange }) => {
-  const [name, setName] = useState(data.name || '');
-  const [dosage, setDosage] = useState<DosageInfo>({
-    amount: data.dosage?.amount || '',
-    unit: data.dosage?.unit || '',
-    form: data.dosage?.form || MEDICATION_FORMS[0]
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [formType, setFormType] = useState(data.dosage?.form || MEDICATION_FORMS[0]);
-
-  // Update units when form type changes
-  useEffect(() => {
-    // Always update the unit when form type changes
-    setDosage(prev => ({
-      ...prev,
-      unit: FORM_UNITS[formType][0],
-      form: formType
-    }));
-    // Clear any existing unit-related errors
-    setErrors(prev => ({ ...prev, unit: '' }));
-  }, [formType]);
-
-  const validate = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!name.trim()) {
-      newErrors.name = 'Medication name is required';
+const BasicInfoStep: React.FC<StepProps> = ({ control, errors, getValues, setValue }) => {
+  const formType = getValues('dosage.form') as MedicationForm || MEDICATION_FORMS[0];
+  
+  // Update unit when form type changes
+  React.useEffect(() => {
+    const currentUnit = getValues('dosage.unit');
+    const availableUnits = FORM_UNITS[formType];
+    if (!availableUnits.includes(currentUnit)) {
+      setValue('dosage.unit', availableUnits[0], { shouldValidate: true });
     }
-    if (!dosage.amount) {
-      newErrors.amount = 'Dosage amount is required';
-    } else if (isNaN(Number(dosage.amount)) || Number(dosage.amount) <= 0) {
-      newErrors.amount = 'Please enter a valid amount';
-    }
-    if (!dosage.unit) {
-      newErrors.unit = 'Please select a unit';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (checkFormValidity() && validate()) {
-      onNext({
-        name,
-        dosage: {
-          ...dosage,
-          form: formType
-        }
-      });
-    }
-  };
-
-  const checkFormValidity = (): boolean => {
-    return Boolean(
-      name.trim() && 
-      dosage.amount && 
-      !isNaN(Number(dosage.amount)) && 
-      Number(dosage.amount) > 0 && 
-      dosage.unit
-    );
-  };
-
-  // Update validation state when fields change
-  useEffect(() => {
-    const isValid = checkFormValidity();
-    onValidationChange?.(isValid);
-  }, [name, dosage.amount, dosage.unit, onValidationChange]);
+  }, [formType, setValue, getValues]);
 
   return (
     <View style={styles.container}>
       <View style={styles.formContent}>
         <View style={styles.field}>
           <Text style={styles.label}>Medication Name</Text>
-          <TextInput
-            style={[styles.input, errors.name && styles.inputError]}
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter medication name"
-            placeholderTextColor={COLORS.secondary}
-            returnKeyType="next"
+          <Controller
+            control={control}
+            name="name"
+
+            render={({ field: { onChange, value } }) => (
+              <TextInput
+                style={[styles.input, errors.name && styles.inputError]}
+                value={value}
+                onChangeText={onChange}
+                placeholder="Enter medication name"
+                placeholderTextColor={COLORS.secondary}
+                returnKeyType="next"
+              />
+            )}
           />
-          {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+          {errors.name && (
+            <Text style={styles.errorText}>{errors.name.message}</Text>
+          )}
         </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Medication Type</Text>
-          <Dropdown<MedicationForm>
-            value={formType}
-            placeholder="Select medication type"
-            options={MEDICATION_FORMS.map(form => ({
-              label: form.charAt(0).toUpperCase() + form.slice(1),
-              value: form
-            }))}
-            onChange={(value) => {
-              setFormType(value);
-              setDosage(prev => ({
-                ...prev,
-                unit: FORM_UNITS[value][0]
-              }));
-            }}
-            error={!!errors.form}
+          <Controller
+            control={control}
+            name="dosage.form"
+            render={({ field: { onChange, value } }) => (
+              <Dropdown<MedicationForm>
+                value={value || MEDICATION_FORMS[0]}
+                placeholder="Select medication type"
+                options={MEDICATION_FORMS.map(form => ({
+                  label: form.charAt(0).toUpperCase() + form.slice(1),
+                  value: form
+                }))}
+                onChange={(value: MedicationForm) => {
+                  onChange(value);
+                  setValue('dosage.unit', FORM_UNITS[value][0]);
+                }}
+                error={!!errors.dosage?.form}
+              />
+            )}
           />
         </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Dosage</Text>
           <View style={styles.dosageContainer}>
-            <TextInput
-              style={[styles.dosageInput, errors.amount && styles.inputError]}
-              value={dosage.amount}
-              onChangeText={(value) => setDosage({ ...dosage, amount: value })}
-              placeholder="Enter amount"
-              keyboardType="decimal-pad"
-              placeholderTextColor={COLORS.secondary}
-              returnKeyType="next"
+            <Controller
+              control={control}
+              name="dosage.amount"
+              render={({ field: { onChange, value, onBlur } }) => (
+                <TextInput
+                  style={[
+                    styles.dosageInput, 
+                    errors.dosage?.amount && styles.inputError
+                  ]}
+                  value={value}
+                  onChangeText={(text) => {
+                    // Remove any non-numeric characters except decimal point
+                    const sanitizedText = text.replace(/[^0-9.]/g, '');
+                    // Ensure only one decimal point
+                    const parts = sanitizedText.split('.');
+                    const cleanedText = parts.length > 2 
+                      ? `${parts[0]}.${parts.slice(1).join('')}`
+                      : sanitizedText;
+                    onChange(cleanedText);
+                  }}
+                  onBlur={() => {
+                    // Format the number on blur
+                    if (value) {
+                      const num = parseFloat(value);
+                      if (!isNaN(num)) {
+                        onChange(num.toString());
+                      }
+                    }
+                    onBlur();
+                  }}
+                  placeholder="Enter amount"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={COLORS.secondary}
+                  returnKeyType="next"
+                />
+              )}
             />
             <View style={{ flex: 1.5 }}>
-              <Dropdown<string>
-                value={dosage.unit}
-                placeholder="Select unit"
-                options={FORM_UNITS[formType].map(unit => ({
-                  label: unit,
-                  value: unit
-                }))}
-                onChange={(value) => setDosage(prev => ({ ...prev, unit: value }))}
-                error={!!errors.unit}
+              <Controller
+                control={control}
+                name="dosage.unit"
+
+                render={({ field: { onChange, value } }) => (
+                  <Dropdown<string>
+                    value={value}
+                    placeholder="Select unit"
+                    options={FORM_UNITS[formType].map((unit: string) => ({
+                      label: unit,
+                      value: unit
+                    }))}
+                    onChange={onChange}
+                    error={!!errors.dosage?.unit}
+                  />
+                )}
               />
             </View>
           </View>
-          {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
-          {errors.unit && <Text style={styles.errorText}>{errors.unit}</Text>}
+          <View style={styles.validationContainer}>
+            {errors.dosage?.amount && (
+              <Text style={styles.errorText}>{errors.dosage.amount.message}</Text>
+            )}
+            {errors.dosage?.unit && (
+              <Text style={styles.errorText}>{errors.dosage.unit.message}</Text>
+            )}
+            {!errors.dosage?.amount && !errors.dosage?.unit && (
+              <Text style={styles.helperText}>
+                Enter the amount and select the appropriate unit
+              </Text>
+            )}
+          </View>
         </View>
-
-
       </View>
     </View>
   );
@@ -220,7 +198,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary3,
     height: 50,
   },
-
   helperText: {
     fontSize: 12,
     color: COLORS.secondary,
@@ -229,6 +206,10 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     marginTop: 24,
+  },
+  validationContainer: {
+    marginTop: 4,
+    minHeight: 20,
   },
 });
 

@@ -1,67 +1,56 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 import { DURATION_OPTIONS } from '../../../../constants/medicationConstants';
-import type { Duration, Medication } from '../../../../types/medication';
+import type { Duration } from '../../../../types/medication';
+const { useState } = React;
 
-interface DurationStepProps {
-  onNext: (data: Partial<Medication>) => void;
-  data: Partial<Medication>;
-}
+import { StepProps } from '../../../../types/form';
 
-const DurationStep: React.FC<DurationStepProps> = ({ onNext, data }) => {
-  const [duration, setDuration] = useState<Duration>({
-    type: 'ongoing',
-    value: undefined,
-    endDate: undefined
-  });
+const DurationStep: React.FC<StepProps> = ({ 
+  control,
+  errors,
+  getValues,
+  setValue,
+  isLastStep
+}) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const duration = getValues('duration');
 
   const handleTypeChange = (type: Duration['type']) => {
-    setDuration({ type, value: undefined, endDate: undefined });
-    setErrors({});
+    const newDuration: Duration = { type };
+    
+    // Set default values based on type
+    if (type === 'ongoing') {
+      // No additional values needed for ongoing
+    } else if (type === 'endDate') {
+      newDuration.endDate = new Date();
+    } else {
+      // For numberOfDays and numberOfWeeks
+      newDuration.value = 1;
+    }
+    
+    setValue('duration', newDuration, { shouldValidate: true });
   };
 
   const handleValueChange = (value: string) => {
     const numValue = parseInt(value, 10);
-    setDuration(prev => ({
-      ...prev,
-      value: isNaN(numValue) ? undefined : numValue
-    }));
-    setErrors({});
+    if (!isNaN(numValue)) {
+      setValue('duration', {
+        ...duration,
+        value: numValue
+      });
+    }
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+  const handleDateChange = (_event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setDuration(prev => ({ ...prev, endDate: selectedDate }));
-      setErrors({});
-    }
-  };
-
-  const validate = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (duration.type === 'numberOfDays' || duration.type === 'numberOfWeeks') {
-      if (!duration.value || duration.value <= 0) {
-        newErrors.value = 'Please enter a valid number';
-      }
-    } else if (duration.type === 'endDate' && !duration.endDate) {
-      newErrors.endDate = 'Please select an end date';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validate()) {
-      onNext({
-        duration,
-        startDate: new Date()
+      setValue('duration', {
+        ...duration,
+        endDate: selectedDate
       });
     }
   };
@@ -104,14 +93,14 @@ const DurationStep: React.FC<DurationStepProps> = ({ onNext, data }) => {
             Number of {duration.type === 'numberOfDays' ? 'days' : 'weeks'}:
           </Text>
           <TextInput
-            style={[styles.input, errors.value && styles.inputError]}
+            style={[styles.input, errors.duration?.value && styles.inputError]}
             value={duration.value?.toString() || ''}
             onChangeText={handleValueChange}
             keyboardType="numeric"
             placeholder="Enter number"
             placeholderTextColor={COLORS.secondary}
           />
-          {errors.value && <Text style={styles.errorText}>{errors.value}</Text>}
+          {errors.duration?.value && <Text style={styles.errorText}>{errors.duration.value.message}</Text>}
         </View>
       )}
 
@@ -119,7 +108,7 @@ const DurationStep: React.FC<DurationStepProps> = ({ onNext, data }) => {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>End Date:</Text>
           <TouchableOpacity
-            style={[styles.dateButton, errors.endDate && styles.inputError]}
+            style={[styles.dateButton, errors.duration?.endDate && styles.inputError]}
             onPress={() => setShowDatePicker(true)}
           >
             <Text style={styles.dateButtonText}>
@@ -127,7 +116,7 @@ const DurationStep: React.FC<DurationStepProps> = ({ onNext, data }) => {
             </Text>
             <Ionicons name="calendar" size={24} color={COLORS.primary} />
           </TouchableOpacity>
-          {errors.endDate && <Text style={styles.errorText}>{errors.endDate}</Text>}
+          {errors.duration?.endDate && <Text style={styles.errorText}>{errors.duration.endDate.message}</Text>}
         </View>
       )}
 

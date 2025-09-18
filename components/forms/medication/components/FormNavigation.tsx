@@ -3,14 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../../../../constants/colors';
 
-interface FormNavigationProps {
-  currentStep: number;
-  totalSteps: number;
-  onBack: () => void;
-  onNext: () => void;
-  isLastStep: boolean;
-  isNextDisabled?: boolean;
-}
+import type { FormNavigationProps } from '../../../../types/form';
 
 const FormNavigation: React.FC<FormNavigationProps> = ({
   currentStep,
@@ -19,12 +12,24 @@ const FormNavigation: React.FC<FormNavigationProps> = ({
   onNext,
   isLastStep,
   isNextDisabled = false
-}) => {
+}: FormNavigationProps) => {
+  const handleNext = () => {
+    if (!isNextDisabled) {
+      onNext();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      onBack();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={onBack}
+        onPress={handleBack}
         disabled={currentStep === 1}
       >
         <Ionicons 
@@ -47,7 +52,7 @@ const FormNavigation: React.FC<FormNavigationProps> = ({
           styles.nextButton,
           isNextDisabled && styles.nextButtonDisabled
         ]}
-        onPress={onNext}
+        onPress={handleNext}
         disabled={isNextDisabled}
       >
         <Text style={styles.nextButtonText}>
@@ -66,6 +71,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     backgroundColor: COLORS.primary2,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   nextButtonDisabled: {
     backgroundColor: COLORS.secondary,
@@ -85,14 +101,17 @@ const styles = StyleSheet.create({
   stepIndicator: {
     fontSize: 14,
     color: COLORS.secondary,
+    fontWeight: '500',
   },
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
+    minWidth: 120,
+    justifyContent: 'center',
   },
   nextButtonText: {
     fontSize: 16,

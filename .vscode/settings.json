@@ -6,5 +6,21 @@
   },
   "cSpell.words": [
     "nursebotapp"
+  ],
+  "codium.codeCompletion.enable": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "typescript.validate.enable": true,
+  "typescript.workspaceSymbols.excludeLibrarySymbols": true,
+  "typescript.surveys.enabled": false,
+  "javascript.validate.enable": true,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "typescript.suggest.paths": false,
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "files.exclude": {
+    "**/node_modules": true
+  },
+  "typescript.validate.ignore": [
+    "**/node_modules/**"
   ]
 }

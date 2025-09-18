@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/ui/Button';
 import { COLORS } from '../../constants/colors';
 import { useMedicationContext } from '../../context/MedicationContext';
@@ -10,16 +11,20 @@ const ChatIcon = require('../../assets/images/NBICON2.png');
 
 const HomeScreen: React.FC = () => {
   const router = useRouter();
-  const { medications, refreshMedications } = useMedicationContext();
+  const { medications, refreshMedications, isLoading, error } = useMedicationContext();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const todaysMedications = medications.slice(0, 2);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    // Refresh medication data
-    await refreshMedications();
-    setRefreshing(false);
+    try {
+      await refreshMedications();
+    } catch (error) {
+      console.error('Failed to refresh medications:', error);
+    } finally {
+      setRefreshing(false);
+    }
   }, [refreshMedications]);
 
 
@@ -84,7 +89,7 @@ const HomeScreen: React.FC = () => {
                     </Text>
                   </View>
                   <Text style={styles.medicationTime}>
-                    {med.frequency.schedule.times[0]}
+                    {med.schedule?.times?.[0] || 'Not scheduled'}
                   </Text>
                 </View>
               ))
