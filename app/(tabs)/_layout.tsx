@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React from 'react';
 import { Image } from 'react-native';
-import { MedicationProvider } from '../../context/MedicationContext';
 import ErrorBoundary from '../../components/ui/ErrorBoundary';
+import { MedicationProvider } from '../../context/MedicationContext';
 
 const ChatIcon = require('../../assets/images/NBICON2.png');
 const PillIcon = require('../../assets/images/pill.png');
