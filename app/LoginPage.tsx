@@ -1,25 +1,42 @@
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Checkbox } from 'expo-checkbox';
-import React from 'react';
+import { Redirect } from 'expo-router';
+import React, { useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-const { useState } = React;
+import { useAuth } from '../context/AuthContext';
 
 const LoginScreen: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const { signIn, loading, user } = useAuth();
 
-  const handleLogin = () => {
-    // Placeholder credentials
-    if (email === "test@example.com" && password === "password123") {
-      alert("Login successful!");
+  const handleLogin = async () => {
+    setError('');
+    setSuccess(false);
+    try {
+      // This checks the credentials against Supabase Auth users
+      const { data, error } = await signIn(email, password);
+      if (error || !data?.user) {
+        setError('Invalid email or password.');
+        return;
+      }
+      setSuccess(true);
       if (onLogin) onLogin();
-    } else {
-      alert("Invalid credentials. Try test@example.com / password123");
+      setTimeout(() => setShouldRedirect(true), 1500); // Show success for 1.5s
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
     }
   };
+
+  if (shouldRedirect || user) {
+    return <Redirect href="/(tabs)" />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -42,7 +59,7 @@ const LoginScreen: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
-                placeholderTextColor="#e5e7eb"
+                placeholderTextColor="#969696ff"
               />
             </View>
           </View>
@@ -57,7 +74,7 @@ const LoginScreen: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
-                placeholderTextColor="#e5e7eb"
+                placeholderTextColor="#969696ff"
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color="gray" />
@@ -83,9 +100,22 @@ const LoginScreen: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
         <TouchableOpacity
           className="w-full bg-black rounded-md py-3 mt-6 items-center"
           onPress={handleLogin}
+          disabled={loading}
         >
-          <Text className="text-white text-lg font-bold">Sign In</Text>
+          <Text className="text-white text-lg font-bold">{loading ? 'Signing In...' : 'Sign In'}</Text>
         </TouchableOpacity>
+
+        {error ? (
+          <View className="w-full items-center mt-2">
+            <Text style={{ color: 'red' }}>{error}</Text>
+          </View>
+        ) : null}
+
+        {success ? (
+          <View className="w-full items-center mt-2">
+            <Text style={{ color: 'green' }}>Logged in successfully!</Text>
+          </View>
+        ) : null}
 
         <View className="w-full items-center mt-6">
           <TouchableOpacity>
