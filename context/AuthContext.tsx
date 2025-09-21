@@ -5,8 +5,7 @@ interface AuthContextType {
     user: any;
     loading: boolean;
     signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
-
-    signUp: (email: string, password: string) => Promise<void>;
+    signUp: (email: string, password: string) => Promise<{ data: any; error: any }>;
     signOut: () => Promise<void>;
 }
 
@@ -33,27 +32,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, []);
 
-    const signIn = async (email: string, password: string) => {
-        // Hash the password here if needed (e.g., using bcryptjs)
-        // For demonstration, let's assume plain text (NOT recommended)
-        const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .eq('password_hash', password) // Replace with hash if you hash passwords
-            .single();
+    const signIn = async (
+        email: string,
+        password: string
+    ): Promise<{ data: any; error: any }> => {
+        try {
+            // Use Supabase Auth to sign in
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-        if (error || !data) {
-            return { data: null, error: error || { message: 'Invalid credentials' } };
+            if (error || !data.user) {
+                // If login fails, return error
+                return { data: null, error: error || { message: 'Invalid credentials' } };
+            }
+
+            // Save the logged-in user in state
+            setUser(data.user);
+
+            return { data, error: null };
+        } catch (err: any) {
+            return { data: null, error: err };
         }
-        setUser(data);
-        return { data, error: null };
     };
 
     const signUp = async (email: string, password: string) => {
-        await supabase.auth.signUp({ email, password });
-        const { data } = await supabase.auth.getSession();
-        setUser(data?.session?.user ?? null);
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (data?.user) setUser(data.user);
+        return { data, error }; // ✅ return response for TS
     };
 
     const signOut = async () => {

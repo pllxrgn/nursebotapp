@@ -9,18 +9,18 @@ import PillIcon from '../../assets/images/pill.png';
 import AddMedicationModal from '../../components/forms/medication/AddMedicationModal';
 import MedicationItem from '../../components/medication/MedicationItem';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { useMedicationContext } from '../../context/MedicationContext';
+import { useMedications } from '../../context/MedicationContext';
 import type { Medication } from '../../types/medication';
 
 const MedicationReminderScreen: React.FC = () => {
   const statusBarHeight = Constants.statusBarHeight;
-  const { medications, addMedication, deleteMedication, recordDose, isLoading, error } = useMedicationContext();
+  const { medications, addMedication, deleteMedication, recordDose, isLoading, error } = useMedications();
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddMedication = async (newMedication: Medication) => {
     try {
-      console.log('[MedicationFlow] Starting medication add:', { 
+      console.log('[MedicationFlow] Starting medication add:', {
         id: newMedication.id,
         name: newMedication.name,
         hasSchedule: !!newMedication.schedule,
@@ -50,7 +50,7 @@ const MedicationReminderScreen: React.FC = () => {
   const handleTaken = async (medicationId: string) => {
     try {
       console.log(`Medication ${medicationId} marked as taken`);
-      await recordDose(medicationId, true);
+      await recordDose(medicationId, "taken"); // ✅ string
       Alert.alert(
         'Dose Recorded',
         'Medication marked as taken successfully.',
@@ -69,7 +69,7 @@ const MedicationReminderScreen: React.FC = () => {
   const handleMissed = async (medicationId: string) => {
     try {
       console.log(`Medication ${medicationId} marked as missed`);
-      await recordDose(medicationId, false);
+      await recordDose(medicationId, "missed"); // ✅ string
       Alert.alert(
         'Dose Recorded',
         'Medication marked as missed.',
@@ -84,6 +84,7 @@ const MedicationReminderScreen: React.FC = () => {
       );
     }
   };
+
 
   const handleEdit = (medicationId: string) => {
     console.log(`Edit medication ${medicationId}`);
@@ -137,7 +138,7 @@ const MedicationReminderScreen: React.FC = () => {
             {medications.length} {medications.length === 1 ? 'medication' : 'medications'} scheduled
           </Text>
         </View>
-        
+
         {isLoading ? (
           <View style={styles.centerContainer}>
             <LoadingSpinner />
@@ -161,8 +162,8 @@ const MedicationReminderScreen: React.FC = () => {
             </Text>
           </View>
         ) : (
-          <ScrollView 
-            contentContainerStyle={styles.medicationsList} 
+          <ScrollView
+            contentContainerStyle={styles.medicationsList}
             showsVerticalScrollIndicator={false}
           >
             {medications.map((med: Medication) => {
@@ -177,7 +178,7 @@ const MedicationReminderScreen: React.FC = () => {
                 });
                 return null;
               }
-              
+
               // Store the id to ensure it's defined in the callbacks
               const id: string = med.id;
               return (

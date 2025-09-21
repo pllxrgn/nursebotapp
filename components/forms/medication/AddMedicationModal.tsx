@@ -21,12 +21,12 @@ const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
   const handleSubmit = (medication: Partial<Medication>) => {
     // Detailed validation with logging
     const missingFields = [];
-    
+
     if (!medication.name) missingFields.push('name');
     if (!medication.dosage?.amount || !medication.dosage?.unit) missingFields.push('dosage');
     if (!medication.schedule?.type || !medication.schedule?.times?.length) missingFields.push('schedule');
     if (!medication.duration?.type) missingFields.push('duration');
-    
+
     if (missingFields.length > 0) {
       console.error('Missing required medication fields:', missingFields);
       console.log('Current medication data:', JSON.stringify(medication, null, 2));
@@ -40,15 +40,15 @@ const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
       dosage: medication.dosage!,
       schedule: medication.schedule!,
       duration: medication.duration!,
-      startDate: medication.startDate || new Date(),
-      color: medication.color || '#64748b', // Default color if not provided
+      start_date: medication.start_date || new Date(),  // ✅ snake_case
+      color: medication.color || '#64748b',
       notes: medication.notes || '',
-      refillReminder: medication.refillReminder || {
+      refillreminder: medication.refillreminder || {
         enabled: false,
         threshold: 7,
         unit: 'days'
       },
-      sideEffects: medication.sideEffects || [],
+      side_effects: medication.side_effects || [],
       interactions: medication.interactions || [],
       storage: medication.storage || {},
     };

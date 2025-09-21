@@ -74,7 +74,7 @@ const MedicationReminderItem: React.FC<MedicationReminderItemProps> = ({
         <Ionicons name="time-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
         <Text style={styles.detailText}>
           {medication.schedule.type}
-          {medication.schedule.type === 'custom' && (medication.schedule as CustomSchedule).interval && 
+          {medication.schedule.type === 'custom' && (medication.schedule as CustomSchedule).interval &&
             ` every ${(medication.schedule as CustomSchedule).interval} days`}
         </Text>
       </View>
@@ -88,7 +88,9 @@ const MedicationReminderItem: React.FC<MedicationReminderItemProps> = ({
 
       <View style={styles.detailsRow}>
         <Ionicons name="calendar-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
-        <Text style={styles.detailText}>Since {medication.startDate.toLocaleDateString()}</Text>
+        <Text style={styles.detailText}>
+          Since {new Date(medication.start_date).toLocaleDateString()}
+        </Text>
       </View>
 
       {medication.notes && (

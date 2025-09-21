@@ -1,9 +1,7 @@
+// ✅ keep your enums/types the same
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-
 export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'bedtime';
-
 export type MealTiming = 'before' | 'with' | 'after';
-
 export type FrequencyType = 'daily' | 'weekly' | 'monthly' | 'custom';
 
 export interface BaseSchedule {
@@ -40,10 +38,22 @@ export type Schedule = DailySchedule | WeeklySchedule | MonthlySchedule | Custom
 export interface Duration {
   type: 'ongoing' | 'endDate' | 'numberOfDays' | 'numberOfWeeks';
   value?: number;
-  endDate?: Date;
+  endDate?: Date | string; // ✅ allow string (from DB JSON)
 }
 
-export type MedicationForm = 'tablet' | 'capsule' | 'liquid' | 'injection' | 'syrup' | 'powder' | 'inhaler' | 'drops' | 'spray' | 'cream' | 'patch' | 'other';
+export type MedicationForm =
+  | 'tablet'
+  | 'capsule'
+  | 'liquid'
+  | 'injection'
+  | 'syrup'
+  | 'powder'
+  | 'inhaler'
+  | 'drops'
+  | 'spray'
+  | 'cream'
+  | 'patch'
+  | 'other';
 
 export interface DosageInfo {
   amount: string;
@@ -63,19 +73,32 @@ export interface RefillReminder {
   unit: 'days';
 }
 
+// ✅ make status optional but typed correctly
+export interface MedicationStatus {
+  taken: boolean;
+  date: Date | string; // ✅ allow string from DB
+  time: string;
+}
+
 export interface Medication {
-  id?: string;
+  id: string;
   name: string;
   dosage: DosageInfo;
   schedule: Schedule;
   duration: Duration;
-  startDate?: Date;
+  start_date: Date | string;
   color: string;
   notes?: string;
-  status?: { taken: boolean; date: Date; time: string }[];
-  refillReminder: RefillReminder;
-  sideEffects: string[];
-  interactions: string[];
+  status?: MedicationStatus[];
+  refillreminder?: RefillReminder;   // ✅ lowercase to match DB
+  side_effects?: string[];            // ✅ snake_case to match DB
+  interactions?: string[];            // already matches DB
   storage?: Storage;
+  medication_doses?: {
+    id: string;
+    medication_id: string;
+    dose_time: string;
+    status: "taken" | "missed";
+    marked_at: string;
+  }[];
 }
-

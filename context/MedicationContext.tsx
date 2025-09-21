@@ -1,160 +1,164 @@
-import React from 'react';
-import { medicationStorage } from '../services/medicationStorage';
-import type { Medication } from '../types/medication';
-const { createContext, useContext, useState, useEffect } = React;
-type ReactNode = React.ReactNode;
+import type { Session } from "@supabase/supabase-js";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
+import { Medication } from "../types/medication";
+import { useAuth } from "./AuthContext";
 
-interface MedicationContextType {
+type MedicationContextType = {
   medications: Medication[];
-  addMedication: (medication: Medication) => Promise<void>;
+  addMedication: (med: Omit<Medication, "id" | "created_at" | "medication_doses" | "user_id">) => Promise<void>;
   deleteMedication: (id: string) => Promise<void>;
-  updateMedication: (id: string, updates: Partial<Medication>) => Promise<void>;
+  recordDose: (medicationId: string, status: "taken" | "missed") => Promise<void>;
   refreshMedications: () => Promise<void>;
-  recordDose: (medicationId: string, taken: boolean, time?: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
-}
-
-const MedicationContext = createContext<MedicationContextType | undefined>(undefined);
-
-type MedicationProviderProps = {
-  children?: React.ReactNode;
+  session: Session | null;
 };
 
-export const MedicationProvider: React.FC<MedicationProviderProps> = ({ children }: MedicationProviderProps) => {
+const MedicationContext = createContext<MedicationContextType | null>(null);
+
+export const useMedications = () => {
+  const context = useContext(MedicationContext);
+  if (!context) throw new Error("useMedications must be used within MedicationProvider");
+  return context;
+};
+
+type Props = { children: ReactNode };
+
+export const MedicationProvider = ({ children }: Props) => {
+  const { user } = useAuth();
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
 
-  // Load medications from storage on app start
-  useEffect(() => {
-    loadMedicationsFromStorage();
-  }, []);
+  const refreshMedications = async () => {
+    if (!user) {
+      setMedications([]);
+      return;
+    }
 
-  const loadMedicationsFromStorage = async () => {
     try {
-      console.log('[MedicationFlow] Loading medications from storage');
       setIsLoading(true);
       setError(null);
-      const storedMedications = await medicationStorage.loadMedications();
-      console.log('[MedicationFlow] Successfully loaded medications:', {
-        count: storedMedications.length,
-        medications: storedMedications.map(m => ({ id: m.id, name: m.name }))
-      });
-      setMedications(storedMedications);
-    } catch (err) {
-      console.error('[MedicationFlow] Failed to load medications:', err);
-      setError('Failed to load medications');
+
+      const { data, error } = await supabase
+        .from("medications")
+        .select("*, medication_doses(*)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setMedications(data || []);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const addMedication = async (medication: Medication) => {
+  const addMedication = async (med: Omit<Medication, "id" | "created_at" | "medication_doses" | "user_id">) => {
+    if (!user) {
+      setError("User not logged in");
+      return;
+    }
+
     try {
-      console.log('[MedicationFlow] Adding medication to context:', {
-        id: medication.id,
-        name: medication.name,
-        schedule: medication.schedule.type
-      });
-      setError(null);
-      const updatedMedications = await medicationStorage.addMedication(medication);
-      console.log('[MedicationFlow] Successfully updated medications list:', {
-        count: updatedMedications.length,
-        newMedication: { id: medication.id, name: medication.name }
-      });
-      setMedications(updatedMedications);
-    } catch (err) {
-      console.error('[MedicationFlow] Failed to add medication:', err);
-      setError('Failed to add medication');
-      throw err;
+      // 🔽 Explicitly map camelCase to lowercase
+      const payload = {
+        ...med,
+        refillreminder: (med as any).refillreminder ?? (med as any).refillReminder ?? null,
+        user_id: user.id,
+      };
+      delete (payload as any).refillReminder; // just in case
+
+      const { error } = await supabase.from("medications").insert([payload]);
+
+      if (error) throw error;
+      await refreshMedications();
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
   const deleteMedication = async (id: string) => {
     try {
-      setError(null);
-      const updatedMedications = await medicationStorage.deleteMedication(id);
-      setMedications(updatedMedications);
-    } catch (err) {
-      console.error('Failed to delete medication:', err);
-      setError('Failed to delete medication');
-      throw err;
+      const { error } = await supabase.from("medications").delete().eq("id", id);
+      if (error) throw error;
+      setMedications((prev) => prev.filter((m) => m.id !== id));
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
-  const updateMedication = async (id: string, updates: Partial<Medication>) => {
+  const recordDose = async (medicationId: string, status: "taken" | "missed") => {
     try {
-      setError(null);
-      const updatedMedications = await medicationStorage.updateMedication(id, updates);
-      setMedications(updatedMedications);
-    } catch (err) {
-      console.error('Failed to update medication:', err);
-      setError('Failed to update medication');
-      throw err;
-    }
-  };
+      const { data, error } = await supabase
+        .from("medication_doses")
+        .insert([
+          {
+            medication_id: medicationId,
+            dose_time: new Date().toISOString(),
+            status,
+            marked_at: new Date().toISOString(),
+          },
+        ])
+        .select();
 
-  const refreshMedications = async () => {
-    await loadMedicationsFromStorage();
-  };
+      if (error) throw error;
 
-  const recordDose = async (medicationId: string, taken: boolean, time?: string) => {
-    try {
-      console.log('[MedicationFlow] Recording dose:', { medicationId, taken, time });
-      setError(null);
-      
-      const currentTime = time || new Date().toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-      });
-      
-      const doseRecord = {
-        taken,
-        date: new Date(),
-        time: currentTime
-      };
-
-      // Find the medication and update its status
-      const medication = medications.find(med => med.id === medicationId);
-      if (!medication) {
-        throw new Error('Medication not found');
+      if (data?.length) {
+        setMedications((prev) =>
+          prev.map((m) =>
+            m.id === medicationId
+              ? { ...m, medication_doses: [...(m.medication_doses || []), data[0]] }
+              : m
+          )
+        );
       }
-
-      const currentStatus = medication.status || [];
-      const updatedStatus = [...currentStatus, doseRecord];
-
-      await updateMedication(medicationId, { status: updatedStatus });
-      
-      console.log('[MedicationFlow] Successfully recorded dose:', { medicationId, taken });
-    } catch (err) {
-      console.error('[MedicationFlow] Failed to record dose:', err);
-      setError('Failed to record dose');
-      throw err;
+    } catch (err: any) {
+      setError(err.message);
     }
   };
+
+  useEffect(() => {
+    // Remove any previous subscriptions (clears cached schema issues)
+    (supabase as any).removeAllSubscriptions?.();
+    if (!user) return;
+
+    const initSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) return setError(error.message);
+      setSession(data.session);
+      if (data.session?.user && user) await refreshMedications();
+    };
+
+    initSession();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user && user) refreshMedications();
+      else setMedications([]);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [user]); // ✅ Add `user` as a dependency
 
   return (
-    <MedicationContext.Provider value={{ 
-      medications, 
-      addMedication, 
-      deleteMedication,
-      updateMedication,
-      refreshMedications,
-      recordDose,
-      isLoading,
-      error
-    }}>
+    <MedicationContext.Provider
+      value={{
+        medications,
+        addMedication,
+        deleteMedication,
+        recordDose,
+        refreshMedications,
+        isLoading,
+        error,
+        session,
+      }}
+    >
       {children}
     </MedicationContext.Provider>
   );
-};
-
-export const useMedicationContext = () => {
-  const context = useContext(MedicationContext);
-  if (context === undefined) {
-    throw new Error('useMedicationContext must be used within a MedicationProvider');
-  }
-  return context;
 };

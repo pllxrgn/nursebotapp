@@ -1,6 +1,6 @@
 import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Checkbox } from 'expo-checkbox';
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import React, { useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -118,7 +118,7 @@ const LoginScreen: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
         ) : null}
 
         <View className="w-full items-center mt-6">
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push("../SignupPage")}>
             <Text className="text-sm text-gray-700">
               Don&apos;t have an account? <Text className="font-bold text-blue-600">Sign up</Text>
             </Text>

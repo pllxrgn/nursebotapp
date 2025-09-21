@@ -15,6 +15,7 @@ interface MedicationFormContainerProps {
   initialValues?: Partial<Medication>;
 }
 
+// ✅ Fixed property names to match Medication interface
 const defaultValues: Partial<Medication> = {
   dosage: {
     form: 'tablet',
@@ -31,9 +32,9 @@ const defaultValues: Partial<Medication> = {
     type: 'ongoing'
   } as Duration,
   storage: {},
-  sideEffects: [],
+  side_effects: [],
   interactions: [],
-  refillReminder: {
+  refillreminder: {
     enabled: true,
     threshold: 7,
     unit: 'days'
@@ -53,33 +54,29 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
       ...defaultValues,
       ...initialValues
     } as Medication,
-    mode: 'onTouched', // Only validate after field is touched
-    reValidateMode: 'onChange', // Then validate on change
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
     resolver: zodResolver(medicationSchema) as Resolver<Medication>
   });
 
   const { formState: { isValid, errors }, handleSubmit, control, getValues, setValue, trigger } = form;
 
-  // Validate current step whenever form data changes
   React.useEffect(() => {
     const validateAndUpdate = async () => {
       const isStepValid = await validateCurrentStepFields();
       console.log('Step validation result:', isStepValid, 'Current errors:', form.formState.errors);
       setIsCurrentStepValid(isStepValid);
     };
-    
-    const subscription = form.watch((value, { name, type }) => {
-      // Validate on any change to ensure proper state updates
+
+    const subscription = form.watch(() => {
       validateAndUpdate();
     });
-    
-    // Initial validation
+
     validateAndUpdate();
-    
+
     return () => subscription.unsubscribe();
   }, [currentStep, form]);
 
-  // Force validation when step changes
   React.useEffect(() => {
     validateCurrentStepFields().then(isValid => setIsCurrentStepValid(isValid));
   }, [currentStep]);
@@ -88,11 +85,9 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
     try {
       const fields = getStepFields(currentStep);
       const isStepValid = await form.trigger(fields);
-      
+
       if (!isStepValid) {
-        // Log field-specific errors for debugging
-        const stepErrors = form.formState.errors;
-        console.log('Step validation failed:', { step: currentStep, errors: stepErrors });
+        console.log('Step validation failed:', { step: currentStep, errors: form.formState.errors });
         return;
       }
 
@@ -102,22 +97,20 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
             const finalData = {
               ...data,
               id: data.id || Date.now().toString(),
-              startDate: data.startDate ? new Date(data.startDate) : new Date(),
+              start_date: data.start_date ? new Date(data.start_date) : new Date(),
               color: data.color || '#000000',
               status: data.status || []
             } satisfies Medication;
-            
-            // Validate the entire form one last time
+
             const isValid = await form.trigger();
             if (!isValid) {
               console.error('Final validation failed:', form.formState.errors);
               return;
             }
-            
+
             await onSubmit(finalData);
           } catch (error) {
             console.error('Form submission error:', error);
-            // You might want to show an error message to the user here
           }
         })();
       } else {
@@ -125,7 +118,6 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
       }
     } catch (error) {
       console.error('Step completion error:', error);
-      // You might want to show an error message to the user here
     }
   };
 
@@ -137,6 +129,7 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
     }
   };
 
+  // ✅ Updated field names to match Medication type
   const getStepFields = (step: number): Array<keyof Medication> => {
     switch (step) {
       case 0:
@@ -144,21 +137,19 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
       case 1:
         return ['schedule'];
       case 2:
-        return ['duration', 'startDate'];
+        return ['duration', 'start_date']; // ✅ was startDate
       case 3:
-        return ['color', 'storage', 'sideEffects', 'interactions', 'notes', 'refillReminder'];
+        return ['color', 'storage', 'side_effects', 'interactions', 'notes', 'refillreminder'];
       default:
         return [];
     }
   };
-  
-  // Validate all nested fields of the current step
+
   const validateCurrentStepFields = async () => {
     try {
       const fields = getStepFields(currentStep);
       let isValid = true;
-      
-      // Validate each field and its nested properties
+
       for (const field of fields) {
         if (field === 'dosage') {
           isValid = isValid && await form.trigger('dosage.amount');
@@ -168,7 +159,7 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
           isValid = isValid && await form.trigger(field);
         }
       }
-      
+
       return isValid;
     } catch (error) {
       console.error('Validation error:', error);
@@ -208,9 +199,9 @@ const MedicationFormContainer: React.FC<MedicationFormContainerProps> = ({
     >
       <View style={styles.container}>
         <View style={styles.content}>
-          <StepIndicator 
-            steps={FORM_STEPS} 
-            currentStep={currentStep} 
+          <StepIndicator
+            steps={FORM_STEPS}
+            currentStep={currentStep}
           />
           {renderStep()}
         </View>
@@ -234,7 +225,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingBottom: 80, // Leave space for the navigation bar
+    paddingBottom: 80,
   }
 });
 

@@ -5,25 +5,12 @@ import type { DayOfWeek } from '../types/medication';
 const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
 const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
-// Zod schema for each part of the medication form
 const dosageSchema = z.object({
   amount: z.string()
     .min(1, 'Dosage amount is required')
-    .refine(
-      (value) => !isNaN(Number(value)),
-      'Please enter a valid number'
-    )
-    .refine(
-      (value) => Number(value) > 0,
-      'Amount must be greater than 0'
-    )
-    .refine(
-      (value) => {
-        const num = Number(value);
-        return num <= 9999; // Reasonable maximum
-      },
-      'Amount is too large'
-    ),
+    .refine((value) => !isNaN(Number(value)), 'Please enter a valid number')
+    .refine((value) => Number(value) > 0, 'Amount must be greater than 0')
+    .refine((value) => Number(value) <= 9999, 'Amount is too large'),
   unit: z.string().min(1, 'Please select a unit'),
   form: z.enum(MEDICATION_FORMS)
 });
@@ -42,23 +29,18 @@ const baseScheduleSchema = z.object({
   timePreferences: timePreferencesSchema
 });
 
-const dailyScheduleSchema = baseScheduleSchema.extend({
-  type: z.literal('daily')
-});
-
+const dailyScheduleSchema = baseScheduleSchema.extend({ type: z.literal('daily') });
 const weeklyScheduleSchema = baseScheduleSchema.extend({
   type: z.literal('weekly'),
-  days: z.array(z.enum(daysOfWeek as unknown as [DayOfWeek, ...DayOfWeek[]])).min(1, 'At least one day must be selected for weekly schedule')
+  days: z.array(z.enum(daysOfWeek as unknown as [DayOfWeek, ...DayOfWeek[]])).min(1)
 });
-
 const monthlyScheduleSchema = baseScheduleSchema.extend({
   type: z.literal('monthly'),
-  daysOfMonth: z.array(z.number().min(1).max(31)).min(1, 'At least one day of month must be selected')
+  daysOfMonth: z.array(z.number().min(1).max(31)).min(1)
 });
-
 const customScheduleSchema = baseScheduleSchema.extend({
   type: z.literal('custom'),
-  interval: z.number().min(1, 'Interval must be positive')
+  interval: z.number().min(1)
 });
 
 const scheduleSchema = z.discriminatedUnion('type', [
@@ -69,21 +51,10 @@ const scheduleSchema = z.discriminatedUnion('type', [
 ]);
 
 const durationSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('ongoing')
-  }),
-  z.object({
-    type: z.literal('endDate'),
-    endDate: z.date()
-  }),
-  z.object({
-    type: z.literal('numberOfDays'),
-    value: z.number().int().positive('Number of days must be positive')
-  }),
-  z.object({
-    type: z.literal('numberOfWeeks'),
-    value: z.number().int().positive('Number of weeks must be positive')
-  })
+  z.object({ type: z.literal('ongoing') }),
+  z.object({ type: z.literal('endDate'), end_date: z.date() }),
+  z.object({ type: z.literal('numberOfDays'), value: z.number().int().positive() }),
+  z.object({ type: z.literal('numberOfWeeks'), value: z.number().int().positive() })
 ]);
 
 const storageSchema = z.object({
@@ -92,7 +63,7 @@ const storageSchema = z.object({
   special: z.string().optional()
 }).optional();
 
-const refillReminderSchema = z.object({
+const refill_reminderSchema = z.object({
   enabled: z.boolean(),
   threshold: z.number().positive(),
   unit: z.literal('days')
@@ -102,14 +73,13 @@ const refillReminderSchema = z.object({
   unit: 'days'
 });
 
-// Main medication schema
 export const medicationSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'Medication name is required'),
   dosage: dosageSchema,
   schedule: scheduleSchema,
   duration: durationSchema,
-  startDate: z.date().default(() => new Date()),
+  start_date: z.date().default(() => new Date()),
   color: z.string().default('#000000'),
   notes: z.string().optional(),
   status: z.array(
@@ -119,8 +89,8 @@ export const medicationSchema = z.object({
       time: z.string()
     })
   ).default([]),
-  refillReminder: refillReminderSchema,
-  sideEffects: z.array(z.string()).default([]),
+  refill_reminder: refill_reminderSchema,
+  side_effects: z.array(z.string()).default([]),
   interactions: z.array(z.string()).default([]),
   storage: storageSchema
 });
