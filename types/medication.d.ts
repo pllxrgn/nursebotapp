@@ -76,7 +76,7 @@ export interface RefillReminder {
 // ✅ make status optional but typed correctly
 export interface MedicationStatus {
   taken: boolean;
-  date: Date | string; // ✅ allow string from DB
+  date: Date | string; // 
   time: string;
 }
 
@@ -86,13 +86,13 @@ export interface Medication {
   dosage: DosageInfo;
   schedule: Schedule;
   duration: Duration;
-  start_date: Date | string;
+  start_date?: string | Date;
   color: string;
   notes?: string;
   status?: MedicationStatus[];
-  refillreminder?: RefillReminder;   // ✅ lowercase to match DB
-  side_effects?: string[];            // ✅ snake_case to match DB
-  interactions?: string[];            // already matches DB
+  refillreminder?: RefillReminder;
+  side_effects?: string[];
+  interactions?: string[];
   storage?: Storage;
   medication_doses?: {
     id: string;

@@ -37,6 +37,7 @@ const MedicationReminderItem: React.FC<MedicationReminderItemProps> = ({
   };
 
   const handleTakenPress = () => {
+    console.log("Taken pressed:", medication.id);
     onTaken(medication.id);
   };
 
@@ -89,7 +90,9 @@ const MedicationReminderItem: React.FC<MedicationReminderItemProps> = ({
       <View style={styles.detailsRow}>
         <Ionicons name="calendar-outline" size={16} color={COLORS.secondary} style={styles.detailIcon} />
         <Text style={styles.detailText}>
-          Since {new Date(medication.start_date).toLocaleDateString()}
+          {medication.start_date
+            ? `Since ${new Date(medication.start_date).toLocaleDateString()}`
+            : "Start date not set"}
         </Text>
       </View>
 
