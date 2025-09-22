@@ -1,15 +1,19 @@
 import { Redirect } from "expo-router";
 import { useAuth } from "../context/AuthContext";
-import LoginScreen from "./LoginPage";
 
 export default function AppEntry() {
     const { user, loading } = useAuth();
 
-    if (loading) return null;
-
-    if (!user) {
-        return <LoginScreen />;
+    if (loading) {
+        // Show a splash or loader while checking auth state
+        return null;
     }
 
+    if (!user) {
+        // Not logged in → go to login page
+        return <Redirect href="/LoginPage" />;
+    }
+
+    // Logged in → go to main tabs
     return <Redirect href="/(tabs)" />;
 }

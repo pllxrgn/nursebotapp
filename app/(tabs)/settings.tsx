@@ -1,15 +1,17 @@
-import React from 'react';
+import { router } from "expo-router";
 import { ScrollView, Text, View } from 'react-native';
 import { Button } from '../../components/ui/Button';
 import { commonStyles } from '../../components/ui/theme';
+import { useAuth } from '../../context/AuthContext';
 
 const Settings = () => {
+  const { signOut } = useAuth();
   return (
     <View style={commonStyles.container}>
       <View style={commonStyles.screenHeader}>
         <Text style={commonStyles.screenTitle}>Settings</Text>
       </View>
-      
+
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
         <View style={commonStyles.card}>
           <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Account</Text>
@@ -50,7 +52,10 @@ const Settings = () => {
         <Button
           title="Sign Out"
           variant="secondary"
-          onPress={() => console.log('Sign out')}
+          onPress={async () => {
+            await signOut();
+            router.replace("/LoginPage");
+          }}
           style={{ marginTop: 24 }}
         />
       </ScrollView>
